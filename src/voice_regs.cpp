@@ -4,14 +4,19 @@ void VoiceRegs::realize(reSID::SID &sid, int voice_no)
 {
     int offset = voice_no * NUM_REGS;
     int mask = 1;
+    if(dirty == 0) {
+        return;
+    }
+    printf("Update #%d:", voice_no);
     for(int i=0;i<NUM_REGS;i++) {
         if((dirty & mask) == mask) {
             sid.write(offset, regs[i]);
-            DEBUG("#%d: @%02x=%02x", voice_no, i, regs[i]);
+            printf(" @%02x=%02x", offset, regs[i]);
         }
         offset++;
         mask<<=1;
     }
+    printf("\n");
     dirty = 0;
 }
 
@@ -55,11 +60,11 @@ void VoiceRegs::setPulseWidth(uint16_t pw)
     }
 }
 
-void VoiceRegs::setWaveform(const Waveform &waveform)
+void VoiceRegs::setWaveform(uint8_t waveform)
 {
     uint8_t old = regs[CONTROL];
-    regs[CONTROL] &= ~(uint8_t)WAVEFORM_MASK;
-    regs[CONTROL] |= (uint8_t)waveform;
+    regs[CONTROL] &= ~WAVE_MASK;
+    regs[CONTROL] |= (waveform & WAVE_MASK);
     if(regs[CONTROL] != old) {
         dirty |= 1<<CONTROL;
     }
@@ -69,9 +74,9 @@ void VoiceRegs::setGate(bool on)
 {
     uint8_t old = regs[CONTROL];
     if(on) {
-        regs[CONTROL] |= (uint8_t)ControlReg::GATE;
+        regs[CONTROL] |= CTRL_GATE;
     } else {
-        regs[CONTROL] &= ~(uint8_t)ControlReg::GATE;
+        regs[CONTROL] &= ~CTRL_GATE;
     }
     if(regs[CONTROL] != old) {
         dirty |= 1<<CONTROL;
@@ -82,9 +87,9 @@ void VoiceRegs::setSync(bool on)
 {
     uint8_t old = regs[CONTROL];
     if(on) {
-        regs[CONTROL] |= (uint8_t)ControlReg::SYNC;
+        regs[CONTROL] |= CTRL_SYNC;
     } else {
-        regs[CONTROL] &= ~(uint8_t)ControlReg::SYNC;
+        regs[CONTROL] &= ~CTRL_SYNC;
     }
     if(regs[CONTROL] != old) {
         dirty |= 1<<CONTROL;
@@ -95,9 +100,22 @@ void VoiceRegs::setRingMod(bool on)
 {
     uint8_t old = regs[CONTROL];
     if(on) {
-        regs[CONTROL] |= (uint8_t)ControlReg::RING_MOD;
+        regs[CONTROL] |= CTRL_RING_MOD;
     } else {
-        regs[CONTROL] &= ~(uint8_t)ControlReg::RING_MOD;
+        regs[CONTROL] &= ~CTRL_RING_MOD;
+    }
+    if(regs[CONTROL] != old) {
+        dirty |= 1<<CONTROL;
+    }
+}
+
+void VoiceRegs::setTest(bool on)
+{
+    uint8_t old = regs[CONTROL];
+    if(on) {
+        regs[CONTROL] |= CTRL_TEST;
+    } else {
+        regs[CONTROL] &= ~CTRL_TEST;
     }
     if(regs[CONTROL] != old) {
         dirty |= 1<<CONTROL;

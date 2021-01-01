@@ -1,0 +1,23 @@
+{
+  "slug": "sidofon",
+  "name": "sidofon",
+  "version": "1.0.0",
+  "license": "MPL",
+  "brand": "captvolt",
+  "author": "Christian Vogelgsang",
+  "authorEmail": "chris@vogelgsang.org",
+  "authorUrl": "www.lallafa.de",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "sidofon",
+      "name": "sidofon",
+      "description": "ReSid Test Module",
+      "tags": []
+    }
+  ]
+}

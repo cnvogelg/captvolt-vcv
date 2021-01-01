@@ -4,14 +4,19 @@ void FilterRegs::realize(reSID::SID &sid)
 {
     int offset = 21;
     int mask = 1;
+    if(dirty == 0) {
+        return;
+    }
+    printf("Update Mn:");
     for(int i=0;i<NUM_REGS;i++) {
         if((dirty & mask) == mask) {
             sid.write(offset, regs[i]);
-            DEBUG("flt: @%02x=%02x", i, regs[i]);
+            printf(" @%02x=%02x", offset, regs[i]);
         }
         offset++;
         mask<<=1;
     }
+    printf("\n");
     dirty = 0;
 }
 
