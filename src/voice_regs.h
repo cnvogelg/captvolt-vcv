@@ -51,4 +51,16 @@ struct VoiceRegs {
     void setDecay(uint8_t decay);
     void setSustain(uint8_t sustain);
     void setRelease(uint8_t release);
+
+    uint16_t getFreq() { return regs[FREQ_HI] << 8 | regs[FREQ_LO]; }
+    uint16_t getPulseWidth() { return regs[PW_HI] << 8 | regs[PW_LO]; }
+    uint8_t  getWaveform() { return regs[CONTROL] & WAVE_MASK; }
+    bool     getGate() { return (regs[CONTROL] & CTRL_GATE) == CTRL_GATE; }
+    bool     getSync() { return (regs[CONTROL] & CTRL_SYNC) == CTRL_SYNC; }
+    bool     getRingMod() { return (regs[CONTROL] & CTRL_RING_MOD) == CTRL_RING_MOD; }
+    bool     getTest() { return (regs[CONTROL] & CTRL_TEST) == CTRL_TEST; }
+    uint8_t  getAttack() { return regs[ATTACK_DECAY] >> 4; }
+    uint8_t  getDecay() { return regs[ATTACK_DECAY] & 0xf; }
+    uint8_t  getSustain() { return regs[SUSTAIN_RELEASE] >> 4; }
+    uint8_t  getRelease() { return regs[SUSTAIN_RELEASE] & 0xf; }
 };
