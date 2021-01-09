@@ -8,21 +8,21 @@
 
 struct Sidofon : Module {
     enum ParamIds {
-        // Voice 1
-        PITCH_PARAM,
-        PULSE_WIDTH_PARAM,
-        WAVE_TRI_PARAM,
-        WAVE_SAW_PARAM,
-        WAVE_PULSE_PARAM,
-        WAVE_NOISE_PARAM,
-        GATE_PARAM,
-        SYNC_PARAM,
-        RING_MOD_PARAM,
-        TEST_PARAM,
-        ATTACK_PARAM,
-        DECAY_PARAM,
-        SUSTAIN_PARAM,
-        RELEASE_PARAM,
+        // Voices
+        ENUMS(PITCH_PARAM,3),
+        ENUMS(PULSE_WIDTH_PARAM,3),
+        ENUMS(WAVE_TRI_PARAM,3),
+        ENUMS(WAVE_SAW_PARAM,3),
+        ENUMS(WAVE_PULSE_PARAM,3),
+        ENUMS(WAVE_NOISE_PARAM,3),
+        ENUMS(GATE_PARAM,3),
+        ENUMS(SYNC_PARAM,3),
+        ENUMS(RING_MOD_PARAM,3),
+        ENUMS(TEST_PARAM,3),
+        ENUMS(ATTACK_PARAM,3),
+        ENUMS(DECAY_PARAM,3),
+        ENUMS(SUSTAIN_PARAM,3),
+        ENUMS(RELEASE_PARAM,3),
         // Filter
         FILTER_VOICE1_PARAM,
         FILTER_VOICE2_PARAM,
@@ -41,21 +41,21 @@ struct Sidofon : Module {
         NUM_PARAMS
     };
     enum InputIds {
-        // Voice 1
-        PITCH_INPUT,
-        PULSE_WIDTH_INPUT,
-        WAVE_TRI_INPUT,
-        WAVE_SAW_INPUT,
-        WAVE_PULSE_INPUT,
-        WAVE_NOISE_INPUT,
-        GATE_INPUT,
-        SYNC_INPUT,
-        RING_MOD_INPUT,
-        TEST_INPUT,
-        ATTACK_INPUT,
-        DECAY_INPUT,
-        SUSTAIN_INPUT,
-        RELEASE_INPUT,
+        // Voices
+        ENUMS(PITCH_INPUT,3),
+        ENUMS(PULSE_WIDTH_INPUT,3),
+        ENUMS(WAVE_TRI_INPUT,3),
+        ENUMS(WAVE_SAW_INPUT,3),
+        ENUMS(WAVE_PULSE_INPUT,3),
+        ENUMS(WAVE_NOISE_INPUT,3),
+        ENUMS(GATE_INPUT,3),
+        ENUMS(SYNC_INPUT,3),
+        ENUMS(RING_MOD_INPUT,3),
+        ENUMS(TEST_INPUT,3),
+        ENUMS(ATTACK_INPUT,3),
+        ENUMS(DECAY_INPUT,3),
+        ENUMS(SUSTAIN_INPUT,3),
+        ENUMS(RELEASE_INPUT,3),
         // Filter
         FILTER_VOICE1_INPUT,
         FILTER_VOICE2_INPUT,
@@ -79,19 +79,19 @@ struct Sidofon : Module {
         NUM_OUTPUTS
     };
     enum LightIds {
-        // Voice 1
-        WAVE_TRI_LIGHT,
-        WAVE_SAW_LIGHT,
-        WAVE_PULSE_LIGHT,
-        WAVE_NOISE_LIGHT,
-        GATE_LIGHT,
-        SYNC_LIGHT,
-        RING_MOD_LIGHT,
-        TEST_LIGHT,
-        ATTACK_LIGHT,
-        DECAY_LIGHT,
-        SUSTAIN_LIGHT,
-        RELEASE_LIGHT,
+        // Voices
+        ENUMS(WAVE_TRI_LIGHT,3),
+        ENUMS(WAVE_SAW_LIGHT,3),
+        ENUMS(WAVE_PULSE_LIGHT,3),
+        ENUMS(WAVE_NOISE_LIGHT,3),
+        ENUMS(GATE_LIGHT,3),
+        ENUMS(SYNC_LIGHT,3),
+        ENUMS(RING_MOD_LIGHT,3),
+        ENUMS(TEST_LIGHT,3),
+        ENUMS(ATTACK_LIGHT,3),
+        ENUMS(DECAY_LIGHT,3),
+        ENUMS(SUSTAIN_LIGHT,3),
+        ENUMS(RELEASE_LIGHT,3),
         // Filter
         FILTER_VOICE1_LIGHT,
         FILTER_VOICE2_LIGHT,
@@ -127,21 +127,23 @@ struct Sidofon : Module {
     Sidofon() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-        // voice 1
-        configParam(PITCH_PARAM, -54.0, 54.0, 0.0, "Pitch", " Hz", std::pow(2.f, 1.f/12.f), dsp::FREQ_C4, 0.f);
-        configParam(PULSE_WIDTH_PARAM, -1.0, 1.0, 0.0, "Pulse Width", " %", 0.f, 100.f);
-        configParam(WAVE_TRI_PARAM, 0.0f, 1.0f, 0.0f, "Triangle", "");
-        configParam(WAVE_SAW_PARAM, 0.0f, 1.0f, 0.0f, "Sawtooth", "");
-        configParam(WAVE_PULSE_PARAM, 0.0f, 1.0f, 0.0f, "Pulse", "");
-        configParam(WAVE_NOISE_PARAM, 0.0f, 1.0f, 0.0f, "Noise", "");
-        configParam(GATE_PARAM, 0.0f, 1.0f, 0.0f, "Gate", "");
-        configParam(SYNC_PARAM, 0.0f, 1.0f, 0.0f, "Sync", "");
-        configParam(RING_MOD_PARAM, 0.0f, 1.0f, 0.0f, "Ring Mod", "");
-        configParam(TEST_PARAM, 0.0f, 1.0f, 0.0f, "Test", "");
-        configParam(ATTACK_PARAM, 0.0f, 1.0f, 0.0f, "Attack");
-        configParam(DECAY_PARAM, 0.0f, 1.0f, 0.0f, "Decay");
-        configParam(SUSTAIN_PARAM, 0.0f, 1.0f, 1.0f, "Sustain");
-        configParam(RELEASE_PARAM, 0.0f, 1.0f, 0.0f, "Release");
+        // voices
+        for(int i=0;i<3;i++) {
+            configParam(PITCH_PARAM + i, -54.0, 54.0, 0.0, "Pitch", " Hz", std::pow(2.f, 1.f/12.f), dsp::FREQ_C4, 0.f);
+            configParam(PULSE_WIDTH_PARAM + i, -1.0, 1.0, 0.0, "Pulse Width", " %", 0.f, 100.f);
+            configParam(WAVE_TRI_PARAM + i, 0.0f, 1.0f, 0.0f, "Triangle", "");
+            configParam(WAVE_SAW_PARAM + i, 0.0f, 1.0f, 0.0f, "Sawtooth", "");
+            configParam(WAVE_PULSE_PARAM + i, 0.0f, 1.0f, 0.0f, "Pulse", "");
+            configParam(WAVE_NOISE_PARAM + i, 0.0f, 1.0f, 0.0f, "Noise", "");
+            configParam(GATE_PARAM + i, 0.0f, 1.0f, 0.0f, "Gate", "");
+            configParam(SYNC_PARAM + i, 0.0f, 1.0f, 0.0f, "Sync", "");
+            configParam(RING_MOD_PARAM + i, 0.0f, 1.0f, 0.0f, "Ring Mod", "");
+            configParam(TEST_PARAM + i, 0.0f, 1.0f, 0.0f, "Test", "");
+            configParam(ATTACK_PARAM + i, 0.0f, 1.0f, 0.0f, "Attack");
+            configParam(DECAY_PARAM + i, 0.0f, 1.0f, 0.0f, "Decay");
+            configParam(SUSTAIN_PARAM + i, 0.0f, 1.0f, 1.0f, "Sustain");
+            configParam(RELEASE_PARAM + i, 0.0f, 1.0f, 0.0f, "Release");
+        }
 
         // filter
         configParam(FILTER_VOICE1_PARAM, 0.0f, 1.0f, 0.0f, "Filter Voice 1");
@@ -163,7 +165,7 @@ struct Sidofon : Module {
 
     inline uint16_t freq2sidreg(float freq)
     {
-        return (uint16_t)freq * 16777216.0f / clockHz;
+        return (uint16_t)(freq * 16777216.0f / clockHz);
     }
 
     void reconfigureSampleRate(float sampleRate)
@@ -199,30 +201,30 @@ struct Sidofon : Module {
         return (uint8_t)val;
     }
 
-    void updateVoice(int voiceNo, int inputOffset, int paramOffset)
+    void updateVoice(int voiceNo)
     {
         VoiceRegs &regs = voiceRegs[voiceNo];
 
         // update pitch
-        float pitchKnob = params[PITCH_PARAM + paramOffset].getValue();
-        float pitchCV = 12.f * inputs[PITCH_INPUT + inputOffset].getVoltage();
+        float pitchKnob = params[PITCH_PARAM + voiceNo].getValue();
+        float pitchCV = 12.f * inputs[PITCH_INPUT + voiceNo].getVoltage();
         float pitch = dsp::FREQ_C4 * std::pow(2.f, (pitchKnob + pitchCV) / 12.f);
         uint16_t pitchReg = freq2sidreg(pitch);
         regs.setFreq(pitchReg);
 
         // update pulse width
-        float pwKnob = params[PULSE_WIDTH_PARAM + paramOffset].getValue();
-        float pwInput = inputs[PULSE_WIDTH_INPUT + inputOffset].getVoltage();
+        float pwKnob = params[PULSE_WIDTH_PARAM + voiceNo].getValue();
+        float pwInput = inputs[PULSE_WIDTH_INPUT + voiceNo].getVoltage();
         float pw = (clamp(pwKnob + pwInput / 5.0f, -1.0f, 1.0f) + 1.0f) / 2.0f;
         uint16_t pwVal = (uint16_t)(pw * VoiceRegs::PULSE_WIDTH_MAX);
         regs.setPulseWidth(pwVal);
 
         // update waveform
         uint8_t waveform = 0;
-        bool tri = getSwitchValue(WAVE_TRI_INPUT + inputOffset, WAVE_TRI_PARAM + paramOffset);
-        bool saw = getSwitchValue(WAVE_SAW_INPUT + inputOffset, WAVE_SAW_PARAM + paramOffset);
-        bool pulse = getSwitchValue(WAVE_PULSE_INPUT + inputOffset, WAVE_PULSE_PARAM + paramOffset);
-        bool noise = getSwitchValue(WAVE_NOISE_INPUT + inputOffset, WAVE_NOISE_PARAM + paramOffset);
+        bool tri = getSwitchValue(WAVE_TRI_INPUT + voiceNo, WAVE_TRI_PARAM + voiceNo);
+        bool saw = getSwitchValue(WAVE_SAW_INPUT + voiceNo, WAVE_SAW_PARAM + voiceNo);
+        bool pulse = getSwitchValue(WAVE_PULSE_INPUT + voiceNo, WAVE_PULSE_PARAM + voiceNo);
+        bool noise = getSwitchValue(WAVE_NOISE_INPUT + voiceNo, WAVE_NOISE_PARAM + voiceNo);
         if(tri) waveform |= VoiceRegs::WAVE_TRIANGLE;
         if(saw) waveform |= VoiceRegs::WAVE_SAWTOOTH;
         if(pulse) waveform |= VoiceRegs::WAVE_RECTANGLE;
@@ -230,29 +232,29 @@ struct Sidofon : Module {
         regs.setWaveform(waveform);
 
         // update gate
-        bool gate = getSwitchValue(GATE_INPUT + inputOffset, GATE_PARAM + paramOffset);
+        bool gate = getSwitchValue(GATE_INPUT + voiceNo, GATE_PARAM + voiceNo);
         regs.setGate(gate);
 
         // update sync
-        bool sync = getSwitchValue(SYNC_INPUT + inputOffset, SYNC_PARAM + paramOffset);
+        bool sync = getSwitchValue(SYNC_INPUT + voiceNo, SYNC_PARAM + voiceNo);
         regs.setSync(sync);
 
         // update ringmod
-        bool ringMod = getSwitchValue(RING_MOD_INPUT + inputOffset, RING_MOD_PARAM + paramOffset);
+        bool ringMod = getSwitchValue(RING_MOD_INPUT + voiceNo, RING_MOD_PARAM + voiceNo);
         regs.setRingMod(ringMod);
 
         // update test
-        bool test = getSwitchValue(TEST_INPUT + inputOffset, TEST_PARAM + paramOffset);
+        bool test = getSwitchValue(TEST_INPUT + voiceNo, TEST_PARAM + voiceNo);
         regs.setTest(test);
 
         // update ADSR
-        regs.setAttack(getADSRValue(ATTACK_INPUT + inputOffset, ATTACK_PARAM + paramOffset));
-        regs.setDecay(getADSRValue(DECAY_INPUT + inputOffset, DECAY_PARAM + paramOffset));
-        regs.setSustain(getADSRValue(SUSTAIN_INPUT + inputOffset, SUSTAIN_PARAM + paramOffset));
-        regs.setRelease(getADSRValue(RELEASE_INPUT + inputOffset, RELEASE_PARAM + paramOffset));
+        regs.setAttack(getADSRValue(ATTACK_INPUT + voiceNo, ATTACK_PARAM + voiceNo));
+        regs.setDecay(getADSRValue(DECAY_INPUT + voiceNo, DECAY_PARAM + voiceNo));
+        regs.setSustain(getADSRValue(SUSTAIN_INPUT + voiceNo, SUSTAIN_PARAM + voiceNo));
+        regs.setRelease(getADSRValue(RELEASE_INPUT + voiceNo, RELEASE_PARAM + voiceNo));
     }
 
-    void updateVoiceLights(int voiceNo, int lightOffset, float sampleTime)
+    void updateVoiceLights(int voiceNo, float sampleTime)
     {
         VoiceRegs &regs = voiceRegs[voiceNo];
 
@@ -261,20 +263,20 @@ struct Sidofon : Module {
         bool saw = (waveform & VoiceRegs::WAVE_SAWTOOTH) == VoiceRegs::WAVE_SAWTOOTH;
         bool pulse = (waveform & VoiceRegs::WAVE_RECTANGLE) == VoiceRegs::WAVE_RECTANGLE;
         bool noise = (waveform & VoiceRegs::WAVE_NOISE) == VoiceRegs::WAVE_NOISE;
-        lights[WAVE_TRI_LIGHT + lightOffset].setSmoothBrightness(tri, sampleTime);
-        lights[WAVE_SAW_LIGHT + lightOffset].setSmoothBrightness(saw, sampleTime);
-        lights[WAVE_PULSE_LIGHT + lightOffset].setSmoothBrightness(pulse, sampleTime);
-        lights[WAVE_NOISE_LIGHT + lightOffset].setSmoothBrightness(noise, sampleTime);
+        lights[WAVE_TRI_LIGHT + voiceNo].setSmoothBrightness(tri, sampleTime);
+        lights[WAVE_SAW_LIGHT + voiceNo].setSmoothBrightness(saw, sampleTime);
+        lights[WAVE_PULSE_LIGHT + voiceNo].setSmoothBrightness(pulse, sampleTime);
+        lights[WAVE_NOISE_LIGHT + voiceNo].setSmoothBrightness(noise, sampleTime);
 
-        lights[GATE_LIGHT + lightOffset].setSmoothBrightness(regs.getGate(), sampleTime);
-        lights[SYNC_LIGHT + lightOffset].setSmoothBrightness(regs.getSync(), sampleTime);
-        lights[RING_MOD_LIGHT + lightOffset].setSmoothBrightness(regs.getRingMod(), sampleTime);
-        lights[TEST_LIGHT + lightOffset].setSmoothBrightness(regs.getTest(), sampleTime);
+        lights[GATE_LIGHT + voiceNo].setSmoothBrightness(regs.getGate(), sampleTime);
+        lights[SYNC_LIGHT + voiceNo].setSmoothBrightness(regs.getSync(), sampleTime);
+        lights[RING_MOD_LIGHT + voiceNo].setSmoothBrightness(regs.getRingMod(), sampleTime);
+        lights[TEST_LIGHT + voiceNo].setSmoothBrightness(regs.getTest(), sampleTime);
 
-        lights[ATTACK_LIGHT + lightOffset].setSmoothBrightness((float)regs.getAttack() / 15.0f, sampleTime);
-        lights[DECAY_LIGHT + lightOffset].setSmoothBrightness((float)regs.getDecay() / 15.0f, sampleTime);
-        lights[SUSTAIN_LIGHT + lightOffset].setSmoothBrightness((float)regs.getSustain() / 15.0f, sampleTime);
-        lights[RELEASE_LIGHT + lightOffset].setSmoothBrightness((float)regs.getRelease() / 15.0f, sampleTime);
+        lights[ATTACK_LIGHT + voiceNo].setSmoothBrightness((float)regs.getAttack() / 15.0f, sampleTime);
+        lights[DECAY_LIGHT + voiceNo].setSmoothBrightness((float)regs.getDecay() / 15.0f, sampleTime);
+        lights[SUSTAIN_LIGHT + voiceNo].setSmoothBrightness((float)regs.getSustain() / 15.0f, sampleTime);
+        lights[RELEASE_LIGHT + voiceNo].setSmoothBrightness((float)regs.getRelease() / 15.0f, sampleTime);
     }
 
     void process(const ProcessArgs& args) override {
@@ -290,13 +292,15 @@ struct Sidofon : Module {
             voiceRegs[0].setSustain(VoiceRegs::SUSTAIN_MAX);
         }
     
-        updateVoice(0, 0, 0);
-
-        updateVoiceLights(0,0,args.sampleTime);
+        // uptdate voices
+        for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
+            updateVoice(i);
+        }
 
         // realize changed SID regs
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
             voiceRegs[i].realize(sid, i);
+            updateVoiceLights(i,args.sampleTime);
         }
         filterRegs.realize(sid);
 
@@ -326,62 +330,10 @@ struct SidofonWidget : ModuleWidget {
         setModule(module);
         setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/sidofon.svg")));
 
-        // ----- Voice 1 -----
-        // params
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(12, 26)), module, Sidofon::PITCH_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(48, 26)), module, Sidofon::PULSE_WIDTH_PARAM));
-
-        addParam(createParamCentered<CKSS>(mm2px(Vec(24, 24)), module, Sidofon::WAVE_TRI_PARAM));
-        addParam(createParamCentered<CKSS>(mm2px(Vec(28, 24)), module, Sidofon::WAVE_SAW_PARAM));
-        addParam(createParamCentered<CKSS>(mm2px(Vec(32, 24)), module, Sidofon::WAVE_PULSE_PARAM));
-        addParam(createParamCentered<CKSS>(mm2px(Vec(36, 24)), module, Sidofon::WAVE_NOISE_PARAM));
-
-        addParam(createParamCentered<CKSS>(mm2px(Vec(24, 38)), module, Sidofon::GATE_PARAM));
-        addParam(createParamCentered<CKSS>(mm2px(Vec(28, 38)), module, Sidofon::SYNC_PARAM));
-        addParam(createParamCentered<CKSS>(mm2px(Vec(32, 38)), module, Sidofon::RING_MOD_PARAM));
-        addParam(createParamCentered<CKSS>(mm2px(Vec(36, 38)), module, Sidofon::TEST_PARAM));
-
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(12, 48)), module, Sidofon::ATTACK_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(24, 48)), module, Sidofon::DECAY_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(36, 48)), module, Sidofon::SUSTAIN_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(48, 48)), module, Sidofon::RELEASE_PARAM));
-
-        addParam(createParamCentered<CKSS>(mm2px(Vec(106, 262)), module, Sidofon::PAL_NTSC_PARAM));
-
-        // light
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(17, 85)), module, Sidofon::WAVE_TRI_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(29, 85)), module, Sidofon::WAVE_SAW_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(41, 85)), module, Sidofon::WAVE_PULSE_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(53, 85)), module, Sidofon::WAVE_NOISE_LIGHT));
-
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(17, 101)), module, Sidofon::GATE_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(29, 101)), module, Sidofon::SYNC_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(41, 101)), module, Sidofon::RING_MOD_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(53, 101)), module, Sidofon::TEST_LIGHT));
-
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(17, 117)), module, Sidofon::ATTACK_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(29, 117)), module, Sidofon::DECAY_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(41, 117)), module, Sidofon::SUSTAIN_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(53, 117)), module, Sidofon::RELEASE_LIGHT));
-
-        // inputs
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12, 64)), module, Sidofon::PITCH_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36, 64)), module, Sidofon::PULSE_WIDTH_INPUT));
-
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12, 80)), module, Sidofon::WAVE_TRI_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24, 80)), module, Sidofon::WAVE_SAW_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36, 80)), module, Sidofon::WAVE_PULSE_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48, 80)), module, Sidofon::WAVE_NOISE_INPUT));
-        
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12, 96)), module, Sidofon::GATE_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24, 96)), module, Sidofon::SYNC_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36, 96)), module, Sidofon::RING_MOD_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48, 96)), module, Sidofon::TEST_INPUT));
-
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12, 112)), module, Sidofon::ATTACK_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24, 112)), module, Sidofon::DECAY_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36, 112)), module, Sidofon::SUSTAIN_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48, 112)), module, Sidofon::RELEASE_INPUT));
+        // ----- Voices -----
+        for(int i=0;i<3;i++) {
+            addVoice(i, i * 56);
+        }
 
         // ----- Filter -----
         // params
@@ -433,6 +385,62 @@ struct SidofonWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(192, 112)), module, Sidofon::CLOCK_INPUT));
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(204, 112)), module, Sidofon::CLOCK_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(216, 112)), module, Sidofon::AUDIO_OUTPUT));
+    }
+
+    void addVoice(int voiceNo, int offset) {
+        // params
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(12 + offset, 26)), module, Sidofon::PITCH_PARAM + voiceNo));
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(48 + offset, 26)), module, Sidofon::PULSE_WIDTH_PARAM + voiceNo));
+
+        addParam(createParamCentered<CKSS>(mm2px(Vec(24 + offset, 24)), module, Sidofon::WAVE_TRI_PARAM + voiceNo));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(28 + offset, 24)), module, Sidofon::WAVE_SAW_PARAM + voiceNo));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(32 + offset, 24)), module, Sidofon::WAVE_PULSE_PARAM + voiceNo));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(36 + offset, 24)), module, Sidofon::WAVE_NOISE_PARAM + voiceNo));
+
+        addParam(createParamCentered<CKSS>(mm2px(Vec(24 + offset, 38)), module, Sidofon::GATE_PARAM + voiceNo));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(28 + offset, 38)), module, Sidofon::SYNC_PARAM + voiceNo));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(32 + offset, 38)), module, Sidofon::RING_MOD_PARAM + voiceNo));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(36 + offset, 38)), module, Sidofon::TEST_PARAM + voiceNo));
+
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(12 + offset, 48)), module, Sidofon::ATTACK_PARAM + voiceNo));
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(24 + offset, 48)), module, Sidofon::DECAY_PARAM + voiceNo));
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(36 + offset, 48)), module, Sidofon::SUSTAIN_PARAM + voiceNo));
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(48 + offset, 48)), module, Sidofon::RELEASE_PARAM + voiceNo));
+
+        // light
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(17 + offset, 85)), module, Sidofon::WAVE_TRI_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(29 + offset, 85)), module, Sidofon::WAVE_SAW_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(41 + offset, 85)), module, Sidofon::WAVE_PULSE_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(53 + offset, 85)), module, Sidofon::WAVE_NOISE_LIGHT + voiceNo));
+
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(17 + offset, 101)), module, Sidofon::GATE_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(29 + offset, 101)), module, Sidofon::SYNC_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(41 + offset, 101)), module, Sidofon::RING_MOD_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(53 + offset, 101)), module, Sidofon::TEST_LIGHT + voiceNo));
+
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(17 + offset, 117)), module, Sidofon::ATTACK_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(29 + offset, 117)), module, Sidofon::DECAY_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(41 + offset, 117)), module, Sidofon::SUSTAIN_LIGHT + voiceNo));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(53 + offset, 117)), module, Sidofon::RELEASE_LIGHT + voiceNo));
+
+        // inputs
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12 + offset, 64)), module, Sidofon::PITCH_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36 + offset, 64)), module, Sidofon::PULSE_WIDTH_INPUT + voiceNo));
+
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12 + offset, 80)), module, Sidofon::WAVE_TRI_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24 + offset, 80)), module, Sidofon::WAVE_SAW_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36 + offset, 80)), module, Sidofon::WAVE_PULSE_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48 + offset, 80)), module, Sidofon::WAVE_NOISE_INPUT + voiceNo));
+        
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12 + offset, 96)), module, Sidofon::GATE_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24 + offset, 96)), module, Sidofon::SYNC_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36 + offset, 96)), module, Sidofon::RING_MOD_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48 + offset, 96)), module, Sidofon::TEST_INPUT + voiceNo));
+
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12 + offset, 112)), module, Sidofon::ATTACK_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24 + offset, 112)), module, Sidofon::DECAY_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36 + offset, 112)), module, Sidofon::SUSTAIN_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48 + offset, 112)), module, Sidofon::RELEASE_INPUT + voiceNo));
     }
 };
 
