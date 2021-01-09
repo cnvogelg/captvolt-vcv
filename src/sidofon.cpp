@@ -168,7 +168,7 @@ struct Sidofon : Module {
         return (uint16_t)(freq * 16777216.0f / clockHz);
     }
 
-    void reconfigureSampleRate(float sampleRate)
+    void reset(float sampleRate)
     {
         sid.reset();
         sid.set_sampling_parameters(clockHz, reSID::SAMPLE_FAST, sampleRate);
@@ -191,14 +191,24 @@ struct Sidofon : Module {
         return val >= 1.0f;
     }
 
-    uint8_t getADSRValue(int inputId, int paramId)
+    uint8_t getByteValue(int inputId, int paramId, int max)
     {
         float val = params[paramId].getValue();
         if(inputs[inputId].isConnected()) {
             val += inputs[inputId].getVoltage() / 10.0f;
         }
-        val = clamp(val * 15.f, 0.f, 15.f);
+        val = clamp(val * (float)max, 0.f, (float)max);
         return (uint8_t)val;
+    }
+
+    uint16_t getLoHiValue(int inputId, int paramId, int max)
+    {
+        float val = params[paramId].getValue();
+        if(inputs[inputId].isConnected()) {
+            val += inputs[inputId].getVoltage() / 10.0f;
+        }
+        val = clamp(val * (float)max, 0.f, (float)max);
+        return (uint16_t)val;
     }
 
     void updateVoice(int voiceNo)
@@ -248,10 +258,10 @@ struct Sidofon : Module {
         regs.setTest(test);
 
         // update ADSR
-        regs.setAttack(getADSRValue(ATTACK_INPUT + voiceNo, ATTACK_PARAM + voiceNo));
-        regs.setDecay(getADSRValue(DECAY_INPUT + voiceNo, DECAY_PARAM + voiceNo));
-        regs.setSustain(getADSRValue(SUSTAIN_INPUT + voiceNo, SUSTAIN_PARAM + voiceNo));
-        regs.setRelease(getADSRValue(RELEASE_INPUT + voiceNo, RELEASE_PARAM + voiceNo));
+        regs.setAttack(getByteValue(ATTACK_INPUT + voiceNo, ATTACK_PARAM + voiceNo, VoiceRegs::ATTACK_MAX));
+        regs.setDecay(getByteValue(DECAY_INPUT + voiceNo, DECAY_PARAM + voiceNo, VoiceRegs::DECAY_MAX));
+        regs.setSustain(getByteValue(SUSTAIN_INPUT + voiceNo, SUSTAIN_PARAM + voiceNo, VoiceRegs::SUSTAIN_MAX));
+        regs.setRelease(getByteValue(RELEASE_INPUT + voiceNo, RELEASE_PARAM + voiceNo, VoiceRegs::RELEASE_MAX));
     }
 
     void updateVoiceLights(int voiceNo, float sampleTime)
@@ -279,23 +289,79 @@ struct Sidofon : Module {
         lights[RELEASE_LIGHT + voiceNo].setSmoothBrightness((float)regs.getRelease() / 15.0f, sampleTime);
     }
 
+    void updateFilter()
+    {
+        bool voice1 = getSwitchValue(FILTER_VOICE1_INPUT, FILTER_VOICE1_PARAM);
+        filterRegs.setFilterVoice(0, voice1);
+        bool voice2 = getSwitchValue(FILTER_VOICE2_INPUT, FILTER_VOICE2_PARAM);
+        filterRegs.setFilterVoice(1, voice2);
+        bool voice3 = getSwitchValue(FILTER_VOICE3_INPUT, FILTER_VOICE3_PARAM);
+        filterRegs.setFilterVoice(2, voice3);
+        bool ext = getSwitchValue(FILTER_AUX_INPUT, FILTER_AUX_PARAM); 
+        filterRegs.setFilterExt(ext);
+
+        bool lp = getSwitchValue(FILTER_LO_PASS_INPUT, FILTER_LO_PASS_PARAM);
+        bool bp = getSwitchValue(FILTER_BAND_PASS_INPUT, FILTER_BAND_PASS_PARAM);
+        bool hp = getSwitchValue(FILTER_HI_PASS_INPUT, FILTER_HI_PASS_PARAM);
+        uint8_t mode = 0;
+        if(lp) mode |= FilterRegs::MODE_LP;
+        if(bp) mode |= FilterRegs::MODE_BP;
+        if(hp) mode |= FilterRegs::MODE_HP;
+        filterRegs.setMode(mode);
+
+        bool v3off = getSwitchValue(VOICE3OFF_INPUT, VOICE3OFF_PARAM);
+        filterRegs.setVoice3Off(v3off);
+
+        uint16_t cutoff = getLoHiValue(FILTER_CUTOFF_INPUT, FILTER_CUTOFF_PARAM, FilterRegs::CUTOFF_MAX);
+        filterRegs.setCutOff(cutoff);
+        
+        uint8_t  res = getByteValue(FILTER_RESONANCE_INPUT, FILTER_RESONANCE_PARAM, FilterRegs::RESONANCE_MAX);
+        filterRegs.setResonance(res);
+        
+        uint8_t  vol = getByteValue(VOLUME_INPUT, VOLUME_PARAM, FilterRegs::VOLUME_MAX);
+        filterRegs.setVolume(vol);
+    }
+
+    void updateFilterLights(float sampleTime)
+    {
+        lights[FILTER_VOICE1_LIGHT].setSmoothBrightness(filterRegs.getFilterVoice(0), sampleTime);
+        lights[FILTER_VOICE2_LIGHT].setSmoothBrightness(filterRegs.getFilterVoice(1), sampleTime);
+        lights[FILTER_VOICE3_LIGHT].setSmoothBrightness(filterRegs.getFilterVoice(2), sampleTime);
+        lights[FILTER_AUX_LIGHT].setSmoothBrightness(filterRegs.getFilterExt(), sampleTime);
+
+        uint8_t mode = filterRegs.getMode();
+        bool lp = (mode & FilterRegs::MODE_LP) == FilterRegs::MODE_LP;
+        bool bp = (mode & FilterRegs::MODE_BP) == FilterRegs::MODE_BP;
+        bool hp = (mode & FilterRegs::MODE_HP) == FilterRegs::MODE_HP;
+        lights[FILTER_LO_PASS_LIGHT].setSmoothBrightness(lp, sampleTime);
+        lights[FILTER_BAND_PASS_LIGHT].setSmoothBrightness(bp, sampleTime);
+        lights[FILTER_HI_PASS_LIGHT].setSmoothBrightness(hp, sampleTime);
+
+        lights[VOICE3OFF_LIGHT].setSmoothBrightness(filterRegs.getVoice3Off(), sampleTime);
+
+        float cutoff = (float)filterRegs.getCutOff() / (float)FilterRegs::CUTOFF_MAX;
+        lights[FILTER_CUTOFF_LIGHT].setSmoothBrightness(cutoff, sampleTime);
+
+        float resonance = (float)filterRegs.getResonance() / (float)FilterRegs::RESONANCE_MAX;
+        lights[FILTER_RESONANCE_LIGHT].setSmoothBrightness(resonance, sampleTime);
+
+        float volume = (float)filterRegs.getVolume() / (float)FilterRegs::VOLUME_MAX;
+        lights[VOLUME_LIGHT].setSmoothBrightness(volume, sampleTime);
+    }
+
     void process(const ProcessArgs& args) override {
         // reconfigure sid engine?
         if(cfgSampleRate != args.sampleRate) {
             cfgSampleRate = args.sampleRate;
-            reconfigureSampleRate(args.sampleRate);
-
-            // hack some voice0
-            filterRegs.setVolume(FilterRegs::VOLUME_MAX);
-            voiceRegs[0].setWaveform((uint8_t)VoiceRegs::WAVE_TRIANGLE);
-            voiceRegs[0].setFreq(0x1cd6);
-            voiceRegs[0].setSustain(VoiceRegs::SUSTAIN_MAX);
+            reset(args.sampleRate);
         }
     
         // uptdate voices
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
             updateVoice(i);
         }
+        // update filter
+        updateFilter();
 
         // realize changed SID regs
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
@@ -303,6 +369,7 @@ struct Sidofon : Module {
             updateVoiceLights(i,args.sampleTime);
         }
         filterRegs.realize(sid);
+        updateFilterLights(args.sampleTime);
 
         // emulate SID for some CPU clocks
         sid.clock(clockSteps);

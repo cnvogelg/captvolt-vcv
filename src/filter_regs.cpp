@@ -71,7 +71,7 @@ void FilterRegs::setFilterVoice(int voice_no, bool on)
 void FilterRegs::setFilterExt(bool on)
 {
     uint8_t old = regs[RES_FILT];
-    uint8_t mask = 0x08;
+    uint8_t mask = FILT_EXT;
     if(on) {
         regs[RES_FILT] |= mask;
     } else {
@@ -82,38 +82,34 @@ void FilterRegs::setFilterExt(bool on)
     }
 }
 
-void FilterRegs::setMode(const FilterMode &mode)
+void FilterRegs::setMode(uint8_t mode)
 {
-    uint8_t mode_mask = ((uint8_t)mode) << 4;
-    uint8_t all_mask = 0x70;
-    uint8_t old = regs[CONTROL];
-    regs[CONTROL] = mode_mask | (old & ~all_mask);
-    if(regs[CONTROL] != old) {
-        dirty |= 1<<CONTROL;
+    uint8_t old = regs[MODE_VOL];
+    regs[MODE_VOL] = (mode & MODE_MASK) | (old & ~MODE_MASK);
+    if(regs[MODE_VOL] != old) {
+        dirty |= 1<<MODE_VOL;
     }
 }
 
 void FilterRegs::setVoice3Off(bool off)
 {
-    uint8_t old = regs[CONTROL];
-    uint8_t mask = 0x80;
+    uint8_t old = regs[MODE_VOL];
+    uint8_t mask = MODE_VOICE3OFF;
     if(off) {
-        regs[CONTROL] |= mask;
+        regs[MODE_VOL] |= mask;
     } else {
-        regs[CONTROL] &= ~mask;
+        regs[MODE_VOL] &= ~mask;
     }
-    if(regs[CONTROL] != old) {
-        dirty |= 1<<CONTROL;
+    if(regs[MODE_VOL] != old) {
+        dirty |= 1<<MODE_VOL;
     }
 }
 
 void FilterRegs::setVolume(uint8_t volume)
 {
-    volume &= VOLUME_MAX;
-    uint8_t all_mask = 0xf;
-    uint8_t old = regs[CONTROL];
-    regs[CONTROL] = volume | (old & ~all_mask);
-    if(regs[CONTROL] != old) {
-        dirty |= 1<<CONTROL;
+    uint8_t old = regs[MODE_VOL];
+    regs[MODE_VOL] = (volume & VOLUME_MAX) | (old & ~VOLUME_MAX);
+    if(regs[MODE_VOL] != old) {
+        dirty |= 1<<MODE_VOL;
     }
 }
