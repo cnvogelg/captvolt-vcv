@@ -27,11 +27,13 @@ struct Sidofon : Module {
         FILTER_VOICE1_PARAM,
         FILTER_VOICE2_PARAM,
         FILTER_VOICE3_PARAM,
+        FILTER_AUX_PARAM,
         FILTER_LO_PASS_PARAM,
         FILTER_BAND_PASS_PARAM,
         FILTER_HI_PASS_PARAM,
-        FILTER_RESONANCE_PARAM,
         VOICE3OFF_PARAM,
+        FILTER_CUTOFF_PARAM,
+        FILTER_RESONANCE_PARAM,
         VOLUME_PARAM,
         // Clock
         PAL_NTSC_PARAM,
@@ -58,13 +60,16 @@ struct Sidofon : Module {
         FILTER_VOICE1_INPUT,
         FILTER_VOICE2_INPUT,
         FILTER_VOICE3_INPUT,
+        FILTER_AUX_INPUT,
         FILTER_LO_PASS_INPUT,
         FILTER_BAND_PASS_INPUT,
         FILTER_HI_PASS_INPUT,
-        FILTER_RESONANCE_INPUT,
         VOICE3OFF_INPUT,
+        FILTER_CUTOFF_INPUT,
+        FILTER_RESONANCE_INPUT,
         VOLUME_INPUT,
         // Main
+        AUX_INPUT,
         CLOCK_INPUT,
         NUM_INPUTS
     };
@@ -91,11 +96,13 @@ struct Sidofon : Module {
         FILTER_VOICE1_LIGHT,
         FILTER_VOICE2_LIGHT,
         FILTER_VOICE3_LIGHT,
+        FILTER_AUX_LIGHT,
         FILTER_LO_PASS_LIGHT,
         FILTER_BAND_PASS_LIGHT,
         FILTER_HI_PASS_LIGHT,
-        FILTER_RESONANCE_LIGHT,
         VOICE3OFF_LIGHT,
+        FILTER_CUTOFF_LIGHT,
+        FILTER_RESONANCE_LIGHT,
         VOLUME_LIGHT,
         NUM_LIGHTS
     };
@@ -131,21 +138,23 @@ struct Sidofon : Module {
         configParam(SYNC_PARAM, 0.0f, 1.0f, 0.0f, "Sync", "");
         configParam(RING_MOD_PARAM, 0.0f, 1.0f, 0.0f, "Ring Mod", "");
         configParam(TEST_PARAM, 0.0f, 1.0f, 0.0f, "Test", "");
-        configParam(ATTACK_PARAM, 0.0f, 1.0f, 0.0f, "Attack", " %", 0.f, 100.f);
-        configParam(DECAY_PARAM, 0.0f, 1.0f, 0.0f, "Decay", " %", 0.f, 100.f);
-        configParam(SUSTAIN_PARAM, 0.0f, 1.0f, 1.0f, "Sustain", " %", 0.f, 100.f);
-        configParam(RELEASE_PARAM, 0.0f, 1.0f, 0.0f, "Release", " %", 0.f, 100.f);
+        configParam(ATTACK_PARAM, 0.0f, 1.0f, 0.0f, "Attack");
+        configParam(DECAY_PARAM, 0.0f, 1.0f, 0.0f, "Decay");
+        configParam(SUSTAIN_PARAM, 0.0f, 1.0f, 1.0f, "Sustain");
+        configParam(RELEASE_PARAM, 0.0f, 1.0f, 0.0f, "Release");
 
         // filter
         configParam(FILTER_VOICE1_PARAM, 0.0f, 1.0f, 0.0f, "Filter Voice 1");
         configParam(FILTER_VOICE2_PARAM, 0.0f, 1.0f, 0.0f, "Filter Voice 2");
         configParam(FILTER_VOICE3_PARAM, 0.0f, 1.0f, 0.0f, "Filter Voice 3");
+        configParam(FILTER_AUX_PARAM, 0.0f, 1.0f, 0.0f, "Filter Aux");
         configParam(FILTER_LO_PASS_PARAM, 0.0f, 1.0f, 0.0f, "Low Pass Filter");
         configParam(FILTER_BAND_PASS_PARAM, 0.0f, 1.0f, 0.0f, "Band Pass Filter");
         configParam(FILTER_HI_PASS_PARAM, 0.0f, 1.0f, 0.0f, "High Pass Filter");
-        configParam(FILTER_RESONANCE_PARAM, 0.0f, 15.0f, 0.0f, "Filter Resonance");
         configParam(VOICE3OFF_PARAM, 0.0f, 1.0f, 0.0f, "Voice 3 Off");
-        configParam(VOLUME_PARAM, 0.0f, 15.0f, 15.0f, "Master Volume");
+        configParam(FILTER_CUTOFF_PARAM, 0.0f, 1.0f, 0.5f, "Filter Cut Off Freq");
+        configParam(FILTER_RESONANCE_PARAM, 0.0f, 1.0f, 0.0f, "Filter Resonance");
+        configParam(VOLUME_PARAM, 0.0f, 1.0f, 1.0f, "Master Volume");
 
         // clock
         configParam(PAL_NTSC_PARAM, 0.0f, 1.0f, 0.0f, "PAL/NTSC", "");
@@ -182,7 +191,7 @@ struct Sidofon : Module {
 
     uint8_t getADSRValue(int inputId, int paramId)
     {
-        float val = params[paramId].getValue() * 15.0f;
+        float val = params[paramId].getValue();
         if(inputs[inputId].isConnected()) {
             val += inputs[inputId].getVoltage() / 10.0f;
         }
@@ -192,44 +201,80 @@ struct Sidofon : Module {
 
     void updateVoice(int voiceNo, int inputOffset, int paramOffset)
     {
+        VoiceRegs &regs = voiceRegs[voiceNo];
+
         // update pitch
         float pitchKnob = params[PITCH_PARAM + paramOffset].getValue();
         float pitchCV = 12.f * inputs[PITCH_INPUT + inputOffset].getVoltage();
         float pitch = dsp::FREQ_C4 * std::pow(2.f, (pitchKnob + pitchCV) / 12.f);
         uint16_t pitchReg = freq2sidreg(pitch);
-        voiceRegs[voiceNo].setFreq(pitchReg);
+        regs.setFreq(pitchReg);
+
+        // update pulse width
+        float pwKnob = params[PULSE_WIDTH_PARAM + paramOffset].getValue();
+        float pwInput = inputs[PULSE_WIDTH_INPUT + inputOffset].getVoltage();
+        float pw = (clamp(pwKnob + pwInput / 5.0f, -1.0f, 1.0f) + 1.0f) / 2.0f;
+        uint16_t pwVal = (uint16_t)(pw * VoiceRegs::PULSE_WIDTH_MAX);
+        regs.setPulseWidth(pwVal);
+
+        // update waveform
+        uint8_t waveform = 0;
+        bool tri = getSwitchValue(WAVE_TRI_INPUT + inputOffset, WAVE_TRI_PARAM + paramOffset);
+        bool saw = getSwitchValue(WAVE_SAW_INPUT + inputOffset, WAVE_SAW_PARAM + paramOffset);
+        bool pulse = getSwitchValue(WAVE_PULSE_INPUT + inputOffset, WAVE_PULSE_PARAM + paramOffset);
+        bool noise = getSwitchValue(WAVE_NOISE_INPUT + inputOffset, WAVE_NOISE_PARAM + paramOffset);
+        if(tri) waveform |= VoiceRegs::WAVE_TRIANGLE;
+        if(saw) waveform |= VoiceRegs::WAVE_SAWTOOTH;
+        if(pulse) waveform |= VoiceRegs::WAVE_RECTANGLE;
+        if(noise) waveform |= VoiceRegs::WAVE_NOISE;
+        regs.setWaveform(waveform);
 
         // update gate
         bool gate = getSwitchValue(GATE_INPUT + inputOffset, GATE_PARAM + paramOffset);
-        voiceRegs[voiceNo].setGate(gate);
+        regs.setGate(gate);
 
         // update sync
         bool sync = getSwitchValue(SYNC_INPUT + inputOffset, SYNC_PARAM + paramOffset);
-        voiceRegs[voiceNo].setSync(sync);
+        regs.setSync(sync);
 
         // update ringmod
         bool ringMod = getSwitchValue(RING_MOD_INPUT + inputOffset, RING_MOD_PARAM + paramOffset);
-        voiceRegs[voiceNo].setRingMod(ringMod);
+        regs.setRingMod(ringMod);
 
         // update test
         bool test = getSwitchValue(TEST_INPUT + inputOffset, TEST_PARAM + paramOffset);
-        voiceRegs[voiceNo].setTest(test);
+        regs.setTest(test);
 
         // update ADSR
-        voiceRegs[voiceNo].setAttack(getADSRValue(ATTACK_INPUT + inputOffset, ATTACK_PARAM + paramOffset));
-        voiceRegs[voiceNo].setDecay(getADSRValue(DECAY_INPUT + inputOffset, DECAY_PARAM + paramOffset));
-        voiceRegs[voiceNo].setSustain(getADSRValue(SUSTAIN_INPUT + inputOffset, SUSTAIN_PARAM + paramOffset));
-        voiceRegs[voiceNo].setRelease(getADSRValue(RELEASE_INPUT + inputOffset, RELEASE_PARAM + paramOffset));
+        regs.setAttack(getADSRValue(ATTACK_INPUT + inputOffset, ATTACK_PARAM + paramOffset));
+        regs.setDecay(getADSRValue(DECAY_INPUT + inputOffset, DECAY_PARAM + paramOffset));
+        regs.setSustain(getADSRValue(SUSTAIN_INPUT + inputOffset, SUSTAIN_PARAM + paramOffset));
+        regs.setRelease(getADSRValue(RELEASE_INPUT + inputOffset, RELEASE_PARAM + paramOffset));
     }
 
-    void updateLights(int voiceNo, int lightOffset, uint32_t sampleTime)
+    void updateVoiceLights(int voiceNo, int lightOffset, float sampleTime)
     {
         VoiceRegs &regs = voiceRegs[voiceNo];
 
-        lights[GATE_LIGHT].setSmoothBrightness(regs.getGate(), sampleTime);
-        lights[SYNC_LIGHT].setSmoothBrightness(regs.getSync(), sampleTime);
-        lights[RING_MOD_LIGHT].setSmoothBrightness(regs.getRingMod(), sampleTime);
-        lights[TEST_LIGHT].setSmoothBrightness(regs.getTest(), sampleTime);
+        uint8_t waveform = regs.getWaveform();
+        bool tri = (waveform & VoiceRegs::WAVE_TRIANGLE) == VoiceRegs::WAVE_TRIANGLE;
+        bool saw = (waveform & VoiceRegs::WAVE_SAWTOOTH) == VoiceRegs::WAVE_SAWTOOTH;
+        bool pulse = (waveform & VoiceRegs::WAVE_RECTANGLE) == VoiceRegs::WAVE_RECTANGLE;
+        bool noise = (waveform & VoiceRegs::WAVE_NOISE) == VoiceRegs::WAVE_NOISE;
+        lights[WAVE_TRI_LIGHT + lightOffset].setSmoothBrightness(tri, sampleTime);
+        lights[WAVE_SAW_LIGHT + lightOffset].setSmoothBrightness(saw, sampleTime);
+        lights[WAVE_PULSE_LIGHT + lightOffset].setSmoothBrightness(pulse, sampleTime);
+        lights[WAVE_NOISE_LIGHT + lightOffset].setSmoothBrightness(noise, sampleTime);
+
+        lights[GATE_LIGHT + lightOffset].setSmoothBrightness(regs.getGate(), sampleTime);
+        lights[SYNC_LIGHT + lightOffset].setSmoothBrightness(regs.getSync(), sampleTime);
+        lights[RING_MOD_LIGHT + lightOffset].setSmoothBrightness(regs.getRingMod(), sampleTime);
+        lights[TEST_LIGHT + lightOffset].setSmoothBrightness(regs.getTest(), sampleTime);
+
+        lights[ATTACK_LIGHT + lightOffset].setSmoothBrightness((float)regs.getAttack() / 15.0f, sampleTime);
+        lights[DECAY_LIGHT + lightOffset].setSmoothBrightness((float)regs.getDecay() / 15.0f, sampleTime);
+        lights[SUSTAIN_LIGHT + lightOffset].setSmoothBrightness((float)regs.getSustain() / 15.0f, sampleTime);
+        lights[RELEASE_LIGHT + lightOffset].setSmoothBrightness((float)regs.getRelease() / 15.0f, sampleTime);
     }
 
     void process(const ProcessArgs& args) override {
@@ -247,7 +292,7 @@ struct Sidofon : Module {
     
         updateVoice(0, 0, 0);
 
-        updateLights(0,0,args.sampleTime);
+        updateVoiceLights(0,0,args.sampleTime);
 
         // realize changed SID regs
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
@@ -340,49 +385,54 @@ struct SidofonWidget : ModuleWidget {
 
         // ----- Filter -----
         // params
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(180, 26)), module, Sidofon::FILTER_RESONANCE_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(204, 26)), module, Sidofon::VOLUME_PARAM));
-
-        addParam(createParamCentered<CKSS>(mm2px(Vec(192, 24)), module, Sidofon::VOICE3OFF_PARAM));
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(180, 26)), module, Sidofon::FILTER_CUTOFF_PARAM));
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(198, 26)), module, Sidofon::FILTER_RESONANCE_PARAM));
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(216, 26)), module, Sidofon::VOLUME_PARAM));
 
         addParam(createParamCentered<CKSS>(mm2px(Vec(178, 46)), module, Sidofon::FILTER_VOICE1_PARAM));
         addParam(createParamCentered<CKSS>(mm2px(Vec(182, 46)), module, Sidofon::FILTER_VOICE2_PARAM));
         addParam(createParamCentered<CKSS>(mm2px(Vec(186, 46)), module, Sidofon::FILTER_VOICE3_PARAM));
-
-        addParam(createParamCentered<CKSS>(mm2px(Vec(198, 46)), module, Sidofon::FILTER_LO_PASS_PARAM));
-        addParam(createParamCentered<CKSS>(mm2px(Vec(202, 46)), module, Sidofon::FILTER_BAND_PASS_PARAM));
-        addParam(createParamCentered<CKSS>(mm2px(Vec(206, 46)), module, Sidofon::FILTER_HI_PASS_PARAM));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(194, 46)), module, Sidofon::FILTER_AUX_PARAM));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(202, 46)), module, Sidofon::VOICE3OFF_PARAM));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(210, 46)), module, Sidofon::FILTER_LO_PASS_PARAM));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(214, 46)), module, Sidofon::FILTER_BAND_PASS_PARAM));
+        addParam(createParamCentered<CKSS>(mm2px(Vec(218, 46)), module, Sidofon::FILTER_HI_PASS_PARAM));
 
         // light
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(185, 69)), module, Sidofon::FILTER_VOICE1_LIGHT));
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(197, 69)), module, Sidofon::FILTER_VOICE2_LIGHT));
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(209, 69)), module, Sidofon::FILTER_VOICE3_LIGHT));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(221, 69)), module, Sidofon::FILTER_AUX_LIGHT));
 
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(185, 85)), module, Sidofon::FILTER_LO_PASS_LIGHT));
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(197, 85)), module, Sidofon::FILTER_BAND_PASS_LIGHT));
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(209, 85)), module, Sidofon::FILTER_HI_PASS_LIGHT));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(221, 85)), module, Sidofon::VOICE3OFF_LIGHT));
 
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(185, 101)), module, Sidofon::FILTER_RESONANCE_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(197, 101)), module, Sidofon::VOICE3OFF_LIGHT));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(209, 101)), module, Sidofon::VOLUME_LIGHT));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(185, 101)), module, Sidofon::FILTER_CUTOFF_LIGHT));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(197, 101)), module, Sidofon::FILTER_RESONANCE_LIGHT));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(221, 101)), module, Sidofon::VOLUME_LIGHT));
 
         // inputs
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(180, 64)), module, Sidofon::FILTER_VOICE1_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(192, 64)), module, Sidofon::FILTER_VOICE2_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(204, 64)), module, Sidofon::FILTER_VOICE3_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(216, 64)), module, Sidofon::FILTER_AUX_INPUT));
 
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(180, 80)), module, Sidofon::FILTER_LO_PASS_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(192, 80)), module, Sidofon::FILTER_BAND_PASS_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(204, 80)), module, Sidofon::FILTER_HI_PASS_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(216, 80)), module, Sidofon::VOICE3OFF_INPUT));
 
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(180, 96)), module, Sidofon::FILTER_RESONANCE_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(192, 96)), module, Sidofon::VOICE3OFF_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(204, 96)), module, Sidofon::VOLUME_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(180, 96)), module, Sidofon::FILTER_CUTOFF_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(192, 96)), module, Sidofon::FILTER_RESONANCE_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(216, 96)), module, Sidofon::VOLUME_INPUT));
 
         // ----- Main -----
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(180, 112)), module, Sidofon::CLOCK_INPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(192, 112)), module, Sidofon::CLOCK_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(204, 112)), module, Sidofon::AUDIO_OUTPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(180, 112)), module, Sidofon::AUX_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(192, 112)), module, Sidofon::CLOCK_INPUT));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(204, 112)), module, Sidofon::CLOCK_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(216, 112)), module, Sidofon::AUDIO_OUTPUT));
     }
 };
 
