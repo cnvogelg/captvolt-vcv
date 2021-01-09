@@ -172,7 +172,8 @@ struct Sidofon : Module {
     {
         sid.reset();
         sid.set_sampling_parameters(clockHz, reSID::SAMPLE_FAST, sampleRate);
-        
+        sid.set_voice_mask(0xf);
+
         // CPU clock steps between audio samples
         clockSteps = (reSID::cycle_count)roundf(clockHz / sampleRate);
 
@@ -362,6 +363,14 @@ struct Sidofon : Module {
         }
         // update filter
         updateFilter();
+
+        // feed in aux
+        if(inputs[AUX_INPUT].isConnected()) {
+            float val = inputs[AUX_INPUT].getVoltage() / 10.0f;
+            val = clamp(val, -1.0f, 1.0f);
+            int16_t aux = (int16_t)(val * 32767.0f);
+            sid.input(aux);
+        }
 
         // realize changed SID regs
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
