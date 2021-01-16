@@ -12,7 +12,8 @@ LDFLAGS +=
 
 # Add .cpp files to the build
 SOURCES += $(wildcard src/*.cpp)
-SOURCES += $(wildcard src/resid/*.cc)
+RESID_SRCS = dac.cc envelope.cc extfilt.cc filter.cc pot.cc sid.cc version.cc voice.cc wave.cc
+SOURCES += $(patsubst %,src/resid/%,$(RESID_SRCS))
 
 # Add files to the ZIP package when running `make dist`
 # The compiled plugin and "plugin.json" are automatically added.
