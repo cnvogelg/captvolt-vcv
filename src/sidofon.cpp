@@ -35,9 +35,6 @@ struct Sidofon : Module {
         FILTER_CUTOFF_PARAM,
         FILTER_RESONANCE_PARAM,
         VOLUME_PARAM,
-        // Clock
-        PAL_NTSC_PARAM,
-        OVERCLOCK_PARAM,
         NUM_PARAMS
     };
     enum InputIds {
@@ -107,22 +104,42 @@ struct Sidofon : Module {
         NUM_LIGHTS
     };
 
-    dsp::PulseGenerator pulseGen;
-    float counter;
-    float period;
+    enum CPUType {
+        PAL, NTSC
+    };
+
+    enum SIDType {
+        MOS6581, MOS8580
+    };
+
+    CPUType cpuType;
+    static constexpr float cpuClockHzPAL  =  985248.0f;
+    static constexpr float cpuClockHzNTSC = 1022727.0f;
+    static constexpr float vsyncHzPAL = 50.0f;
+    static constexpr float vsyncHzNTSC = 60.0f;
+    float cpuClockHz = cpuClockHzPAL;
+    float vsyncHz = vsyncHzPAL;
+    float vsyncOversample = 1;
+    float sampleRate;
 
     reSID::SID sid;
-    float cfgSampleRate;
-    reSID::cycle_count clockSteps;
-    static constexpr float clockHzPAL  =  985248.0f;
-    static constexpr float clockHzNTSC = 1022727.0f;
-    static constexpr float clockHz = clockHzNTSC;
-    static constexpr float playHz = 50.0f;
-    static constexpr float triggerTime = 1e-4f;
-    uint16_t oldSidReg;
-
+    SIDType sidType = MOS8580;
+    reSID::cycle_count cpuClockSteps;
     VoiceRegs voiceRegs[VoiceRegs::NUM_VOICES];
     FilterRegs filterRegs;
+
+    // clock in
+    dsp::SchmittTrigger clkInDetector;
+    // clock out
+    dsp::PulseGenerator clkOutPulseGen;
+    float vsyncCounter;
+    float vsyncPeriod;
+    static constexpr float triggerTime = 1e-4f;
+
+    // Json I/O
+    static constexpr const char *JSON_CPU_TYPE_KEY = "CPUType";
+    static constexpr const char *JSON_SID_TYPE_KEY = "SIDType";
+    static constexpr const char *JSON_VSYNC_OVERSAMPLE_KEY = "VSyncOversample";
 
     Sidofon() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -157,25 +174,55 @@ struct Sidofon : Module {
         configParam(FILTER_CUTOFF_PARAM, 0.0f, 1.0f, 0.5f, "Filter Cut Off Freq");
         configParam(FILTER_RESONANCE_PARAM, 0.0f, 1.0f, 0.0f, "Filter Resonance");
         configParam(VOLUME_PARAM, 0.0f, 1.0f, 1.0f, "Master Volume");
+    }
 
-        // clock
-        configParam(PAL_NTSC_PARAM, 0.0f, 1.0f, 0.0f, "PAL/NTSC", "");
-        configParam(OVERCLOCK_PARAM, 1.f, 8.f, 1.f, "Overclock", "x");
-      }
+    void setCPUType(CPUType type)
+    {
+        if(type != cpuType) {
+            cpuType = type;
+            if(type == PAL) {
+                cpuClockHz = cpuClockHzPAL;
+                vsyncHz = 50.0f;
+            } else {
+                cpuClockHz = cpuClockHzNTSC;
+                vsyncHz = 60.0f;
+            }
+            vsyncPeriod = sampleRate / vsyncHz;
+            reset();
+        }
+    }
+
+    void setSIDType(SIDType type)
+    {
+        if(type != sidType) {
+            sidType = type;
+            reset();
+        }
+    }
+
+    void setSampleRate(float rate)
+    {
+        if(rate != sampleRate) {
+            sampleRate = rate;
+            vsyncPeriod = rate / vsyncHz;
+            reset();
+        }
+    }
 
     inline uint16_t freq2sidreg(float freq)
     {
-        return (uint16_t)(freq * 16777216.0f / clockHz);
+        return (uint16_t)(freq * 16777216.0f / cpuClockHz);
     }
 
-    void reset(float sampleRate)
+    void reset()
     {
         sid.reset();
-        sid.set_sampling_parameters(clockHz, reSID::SAMPLE_FAST, sampleRate);
+        sid.set_sampling_parameters(cpuClockHz, reSID::SAMPLE_FAST, sampleRate);
         sid.set_voice_mask(0xf);
+        sid.set_chip_model(sidType == MOS6581 ? reSID::MOS6581 : reSID::MOS8580);
 
         // CPU clock steps between audio samples
-        clockSteps = (reSID::cycle_count)roundf(clockHz / sampleRate);
+        cpuClockSteps = (reSID::cycle_count)roundf(cpuClockHz / sampleRate);
 
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
             voiceRegs[i].reset();
@@ -350,11 +397,20 @@ struct Sidofon : Module {
         lights[VOLUME_LIGHT].setSmoothBrightness(volume, sampleTime);
     }
 
+    void updateSID(float sampleTime) {
+        // realize changed SID regs
+        for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
+            voiceRegs[i].realize(sid, i);
+            updateVoiceLights(i,sampleTime);
+        }
+        filterRegs.realize(sid);
+        updateFilterLights(sampleTime);
+    }
+
     void process(const ProcessArgs& args) override {
         // reconfigure sid engine?
-        if(cfgSampleRate != args.sampleRate) {
-            cfgSampleRate = args.sampleRate;
-            reset(args.sampleRate);
+        if(sampleRate != args.sampleRate) {
+            setSampleRate(args.sampleRate);
         }
     
         // uptdate voices
@@ -372,34 +428,92 @@ struct Sidofon : Module {
             sid.input(aux);
         }
 
-        // realize changed SID regs
-        for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
-            voiceRegs[i].realize(sid, i);
-            updateVoiceLights(i,args.sampleTime);
+        // check register update clock
+        bool update = false;
+        if(inputs[CLOCK_INPUT].isConnected()) {
+            // external clock
+            float clkIn = inputs[CLOCK_INPUT].getVoltage();
+            update = clkInDetector.process(clkIn);
         }
-        filterRegs.realize(sid);
-        updateFilterLights(args.sampleTime);
+        else {
+            // use internal vsync based clock
+            float period = vsyncPeriod / vsyncOversample;
+            if(vsyncCounter > period) {
+               vsyncCounter -= period;
+               update = true;
+            }
+            vsyncCounter++;
+        }
+
+        // update SID regs?
+        if(update) {
+            updateSID(args.sampleTime);
+            // trigger clock out pulse
+            clkOutPulseGen.trigger(triggerTime);
+        }
 
         // emulate SID for some CPU clocks
-        sid.clock(clockSteps);
+        sid.clock(cpuClockSteps);
 
-        // retrieve SID audio sample and convert to voltage
+        // Audio out: retrieve SID audio sample and convert to voltage
         int16_t sample = sid.output();
         float audio = sample * 10.0f / 32768.0f;
         outputs[AUDIO_OUTPUT].setVoltage(audio);
 
-        // set trigger for vsync Hz
-        period = args.sampleRate / playHz;
-        if(counter > period) {
-            pulseGen.trigger(triggerTime);
-            counter -= period;
-        }
-        counter++;
-        float triggerValue = pulseGen.process(args.sampleTime);
+        // Clock out
+        float triggerValue = clkOutPulseGen.process(args.sampleTime);
         outputs[CLOCK_OUTPUT].setVoltage(triggerValue * 10.f);
     }
+
+    json_t *dataToJson() override {
+    	json_t *rootJ = json_object();
+	    json_object_set_new(rootJ, JSON_CPU_TYPE_KEY, json_integer(cpuType));
+	    json_object_set_new(rootJ, JSON_SID_TYPE_KEY, json_integer(sidType));
+	    json_object_set_new(rootJ, JSON_VSYNC_OVERSAMPLE_KEY, json_integer(vsyncOversample));
+	    return rootJ;
+    }
+
+    void dataFromJson(json_t *rootJ) override {
+    	json_t *cpuTypeJ = json_object_get(rootJ, JSON_CPU_TYPE_KEY);
+	    if (cpuTypeJ) {
+    		CPUType type = (CPUType)json_integer_value(cpuTypeJ);
+            setCPUType(type);
+        }
+    	json_t *sidTypeJ = json_object_get(rootJ, JSON_SID_TYPE_KEY);
+	    if (sidTypeJ) {
+    		SIDType type = (SIDType)json_integer_value(sidTypeJ);
+            setSIDType(type);
+        }
+    	json_t *vsoJ = json_object_get(rootJ, JSON_VSYNC_OVERSAMPLE_KEY);
+	    if (vsoJ) {
+            vsyncOversample = json_integer_value(vsoJ);
+        }
+	}
 };
 
+struct CPUTypeMenuItem : MenuItem {
+	Sidofon *module;
+	Sidofon::CPUType cpuType;
+	void onAction(const event::Action &e) override{
+		module->setCPUType(cpuType);
+	}
+};
+
+struct SIDTypeMenuItem : MenuItem {
+	Sidofon *module;
+	Sidofon::SIDType sidType;
+	void onAction(const event::Action &e) override{
+		module->setSIDType(sidType);
+	}
+};
+
+struct VSyncOversampleMenuItem : MenuItem {
+	Sidofon *module;
+	float oversample;
+	void onAction(const event::Action &e) override{
+		module->vsyncOversample = oversample;
+	}
+};
 
 struct SidofonWidget : ModuleWidget {
     SidofonWidget(Sidofon* module) {
@@ -517,6 +631,73 @@ struct SidofonWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24 + offset, 112)), module, Sidofon::DECAY_INPUT + voiceNo));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36 + offset, 112)), module, Sidofon::SUSTAIN_INPUT + voiceNo));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48 + offset, 112)), module, Sidofon::RELEASE_INPUT + voiceNo));
+    }
+
+    void appendContextMenu(Menu *menu) override {
+	    Sidofon *module = dynamic_cast<Sidofon*>(this->module);
+
+    	menu->addChild(new MenuEntry);
+
+    	MenuLabel *sidLabel = new MenuLabel();
+	    sidLabel->text = "SID Model";
+	    menu->addChild(sidLabel);
+
+	    SIDTypeMenuItem *sid1Item = new SIDTypeMenuItem();
+    	sid1Item->text = "MOS 6581";
+    	sid1Item->module = module;
+	    sid1Item->sidType = Sidofon::MOS6581;
+    	sid1Item->rightText = CHECKMARK(module->sidType == Sidofon::MOS6581);
+    	menu->addChild(sid1Item);
+
+	    SIDTypeMenuItem *sid2Item = new SIDTypeMenuItem();
+    	sid2Item->text = "MOS 8580";
+    	sid2Item->module = module;
+	    sid2Item->sidType = Sidofon::MOS8580;
+    	sid2Item->rightText = CHECKMARK(module->sidType == Sidofon::MOS8580);
+    	menu->addChild(sid2Item);
+
+    	MenuLabel *cpuLabel = new MenuLabel();
+	    cpuLabel->text = "CPU Clock";
+	    menu->addChild(cpuLabel);
+
+	    CPUTypeMenuItem *palItem = new CPUTypeMenuItem();
+    	palItem->text = "PAL (50Hz vsync)";
+    	palItem->module = module;
+	    palItem->cpuType = Sidofon::PAL;
+    	palItem->rightText = CHECKMARK(module->cpuType == Sidofon::PAL);
+    	menu->addChild(palItem);
+
+	    CPUTypeMenuItem *ntscItem = new CPUTypeMenuItem();
+    	ntscItem->text = "NTSC (60Hz vsync)";
+    	ntscItem->module = module;
+	    ntscItem->cpuType = Sidofon::NTSC;
+    	ntscItem->rightText = CHECKMARK(module->cpuType == Sidofon::NTSC);
+    	menu->addChild(ntscItem);
+
+    	MenuLabel *vsoLabel = new MenuLabel();
+	    vsoLabel->text = "VSync Oversample";
+	    menu->addChild(vsoLabel);
+
+        VSyncOversampleMenuItem *vso1Item = new VSyncOversampleMenuItem();
+        vso1Item->text = "x1";
+        vso1Item->module = module;
+        vso1Item->oversample = 1;
+    	vso1Item->rightText = CHECKMARK(module->vsyncOversample == vso1Item->oversample);
+    	menu->addChild(vso1Item);
+
+        VSyncOversampleMenuItem *vso2Item = new VSyncOversampleMenuItem();
+        vso2Item->text = "x2";
+        vso2Item->module = module;
+        vso2Item->oversample = 2;
+    	vso2Item->rightText = CHECKMARK(module->vsyncOversample == vso2Item->oversample);
+    	menu->addChild(vso2Item);
+
+        VSyncOversampleMenuItem *vso4Item = new VSyncOversampleMenuItem();
+        vso4Item->text = "x4";
+        vso4Item->module = module;
+        vso4Item->oversample = 4;
+    	vso4Item->rightText = CHECKMARK(module->vsyncOversample == vso4Item->oversample);
+    	menu->addChild(vso4Item);
     }
 };
 
