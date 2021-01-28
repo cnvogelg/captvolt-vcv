@@ -1,23 +1,30 @@
 {
-  "slug": "sidofon",
-  "name": "sidofon",
+  "slug": "captvolt",
+  "name": "CaptVolt's VCV Modules",
   "version": "1.0.0",
-  "license": "MPL",
+  "license": "GPL-3.0-or-later",
   "brand": "captvolt",
   "author": "Christian Vogelgsang",
   "authorEmail": "chris@vogelgsang.org",
-  "authorUrl": "www.lallafa.de",
-  "pluginUrl": "",
-  "manualUrl": "",
-  "sourceUrl": "",
+  "authorUrl": "https://github.com/cnvogelg",
+  "pluginUrl": "https://github.com/cnvogelg/captvolt-vcv",
+  "manualUrl": "https://github.com/cnvogelg/captvolt-vcv/blob/master/README.md",
+  "sourceUrl": "https://github.com/cnvogelg/captvolt-vcv",
   "donateUrl": "",
-  "changelogUrl": "",
+  "changelogUrl": "https://github.com/cnvogelg/captvolt-vcv/releases",
   "modules": [
     {
-      "slug": "sidofon",
+      "slug": "captvolt-sidofon",
       "name": "sidofon",
-      "description": "ReSid Test Module",
-      "tags": []
+      "description": "Raw SID 6851/8580 chip emulation using ReSID engine",
+      "tags": [
+        "Synth Voice",
+        "Filter"
+      ],
+      "keywords" : [
+        "SID"
+      ],
+      "manualUrl": "https://github.com/cnvogelg/captvolt-vcv/blob/master/README.md#sidofon"
     }
   ]
 }
