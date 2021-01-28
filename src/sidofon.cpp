@@ -132,7 +132,7 @@ struct Sidofon : Module {
     dsp::SchmittTrigger clkInDetector;
     // clock out
     dsp::PulseGenerator clkOutPulseGen;
-    float vsyncCounter;
+    float vsyncCounter = 0.0;
     float vsyncPeriod;
     static constexpr float triggerTime = 1e-4f;
 
@@ -216,6 +216,7 @@ struct Sidofon : Module {
 
     void reset()
     {
+        vsyncCounter = 0.0;
         sid.reset();
         sid.set_sampling_parameters(cpuClockHz, reSID::SAMPLE_FAST, sampleRate);
         sid.set_voice_mask(0xf);
@@ -413,13 +414,6 @@ struct Sidofon : Module {
             setSampleRate(args.sampleRate);
         }
     
-        // uptdate voices
-        for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
-            updateVoice(i);
-        }
-        // update filter
-        updateFilter();
-
         // feed in aux
         if(inputs[AUX_INPUT].isConnected()) {
             float val = inputs[AUX_INPUT].getVoltage() / 10.0f;
@@ -447,6 +441,13 @@ struct Sidofon : Module {
 
         // update SID regs?
         if(update) {
+            // uptdate voices
+            for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
+                updateVoice(i);
+            }
+            // update filter
+            updateFilter();
+
             updateSID(args.sampleTime);
             // trigger clock out pulse
             clkOutPulseGen.trigger(triggerTime);
@@ -702,4 +703,4 @@ struct SidofonWidget : ModuleWidget {
 };
 
 
-Model* modelSidofon = createModel<Sidofon, SidofonWidget>("sidofon");
+Model* modelSidofon = createModel<Sidofon, SidofonWidget>("captvolt-sidofon");
