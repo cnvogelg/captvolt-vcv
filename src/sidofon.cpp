@@ -398,13 +398,11 @@ struct Sidofon : Module {
         lights[VOLUME_LIGHT].setSmoothBrightness(volume, sampleTime);
     }
 
-    void updateSID(float sampleTime) {
+    void updateLights(float sampleTime) {
         // realize changed SID regs
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
-            voiceRegs[i].realize(sid, i);
             updateVoiceLights(i,sampleTime);
         }
-        filterRegs.realize(sid);
         updateFilterLights(sampleTime);
     }
 
@@ -444,14 +442,17 @@ struct Sidofon : Module {
             // uptdate voices
             for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
                 updateVoice(i);
+                voiceRegs[i].realize(sid, i);
             }
             // update filter
             updateFilter();
+            filterRegs.realize(sid);
 
-            updateSID(args.sampleTime);
             // trigger clock out pulse
             clkOutPulseGen.trigger(triggerTime);
         }
+
+        updateLights(args.sampleTime);
 
         // emulate SID for some CPU clocks
         sid.clock(cpuClockSteps);
