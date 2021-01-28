@@ -1,6 +1,6 @@
 # CaptVolt's VCV Modules
 
-## <a name="sidofon"></a>  sidofon 
+## sidofon 
 
 ![module screenshot](./doc/sidofon.png)
 
