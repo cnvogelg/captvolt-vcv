@@ -7,16 +7,22 @@ void FilterRegs::realize(reSID::SID &sid)
     if(dirty == 0) {
         return;
     }
+#ifdef DEBUG_REGS
     printf("Update Mn:");
+#endif
     for(int i=0;i<NUM_REGS;i++) {
         if((dirty & mask) == mask) {
             sid.write(offset, regs[i]);
+#ifdef DEBUG_REGS
             printf(" @%02x=%02x", offset, regs[i]);
+#endif
         }
         offset++;
         mask<<=1;
     }
+#ifdef DEBUG_REGS
     printf("\n");
+#endif
     dirty = 0;
 }
 
