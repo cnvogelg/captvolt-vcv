@@ -109,7 +109,7 @@ struct Sidofon : Module {
     };
 
     enum SIDType {
-        MOS6581, MOS8580
+        MOS6581, MOS8580, MOS8580_DIGI
     };
 
     CPUType cpuType;
@@ -217,10 +217,17 @@ struct Sidofon : Module {
     void reset()
     {
         vsyncCounter = 0.0;
+
         sid.reset();
-        sid.set_sampling_parameters(cpuClockHz, reSID::SAMPLE_FAST, sampleRate);
-        sid.set_voice_mask(0xf);
+
+        // configure SID
         sid.set_chip_model(sidType == MOS6581 ? reSID::MOS6581 : reSID::MOS8580);
+        // enable 3 voices and aux
+        sid.set_voice_mask(0x7);
+        sid.set_sampling_parameters(cpuClockHz, reSID::SAMPLE_FAST, sampleRate);
+
+        sid.enable_filter(true);
+        sid.enable_external_filter(true);
 
         // CPU clock steps between audio samples
         cpuClockSteps = (reSID::cycle_count)roundf(cpuClockHz / sampleRate);
@@ -413,12 +420,19 @@ struct Sidofon : Module {
         }
     
         // feed in aux
+        int16_t aux_value;
         if(inputs[AUX_INPUT].isConnected()) {
             float val = inputs[AUX_INPUT].getVoltage() / 10.0f;
             val = clamp(val, -1.0f, 1.0f);
-            int16_t aux = (int16_t)(val * 32767.0f);
-            sid.input(aux);
+            aux_value = (int16_t)(val * 32767.0f);
+        } else {
+            if(sidType == MOS8580_DIGI) {
+                aux_value = -32768;
+            } else {
+                aux_value = 0;
+            }
         }
+        sid.input(aux_value);
 
         // check register update clock
         bool update = false;

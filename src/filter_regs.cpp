@@ -1,5 +1,7 @@
 #include "filter_regs.h"
 
+#define DEBUG_REGS
+
 void FilterRegs::realize(reSID::SID &sid)
 {
     int offset = 21;

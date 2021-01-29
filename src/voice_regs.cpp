@@ -1,5 +1,7 @@
 #include "voice_regs.h"
 
+#define DEBUG_REGS
+
 void VoiceRegs::realize(reSID::SID &sid, int voice_no)
 {
     int offset = voice_no * NUM_REGS;
