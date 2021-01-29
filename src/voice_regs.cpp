@@ -36,18 +36,22 @@ void VoiceRegs::reset()
 }
 
 // 0..65535
-void VoiceRegs::setFreq(uint16_t freq)
+bool VoiceRegs::setFreq(uint16_t freq)
 {
     uint8_t old_lo = regs[FREQ_LO];
     uint8_t old_hi = regs[FREQ_HI];
     regs[FREQ_LO] = (uint8_t)(freq & 0xff);
     regs[FREQ_HI] = (uint8_t)(freq >> 8);
+    bool d = false;
     if(regs[FREQ_LO] != old_lo) {
         dirty |= (1<<FREQ_LO);
+        d = true;
     }
     if(regs[FREQ_HI] != old_hi) {
         dirty |= (1<<FREQ_HI);
+        d = true;
     }
+    return d;
 }
 
 // 0..4095

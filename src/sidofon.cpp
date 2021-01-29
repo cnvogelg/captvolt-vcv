@@ -118,6 +118,7 @@ struct Sidofon : Module {
     static constexpr float vsyncHzPAL = 50.0f;
     static constexpr float vsyncHzNTSC = 60.0f;
     float cpuClockHz = cpuClockHzPAL;
+    float cpuClockRealHz = cpuClockHzPAL;
     float vsyncHz = vsyncHzPAL;
     float vsyncOversample = 1;
     float sampleRate = 0.0;
@@ -209,7 +210,12 @@ struct Sidofon : Module {
 
     inline uint16_t freq2sidreg(float freq)
     {
-        return (uint16_t)(freq * 16777216.0f / cpuClockHz);
+        return (uint16_t)roundf(freq * 16777216.0f / cpuClockRealHz);
+    }
+
+    inline float sidreg2freq(uint16_t val)
+    {
+        return val * cpuClockRealHz / 16777216.0f;
     }
 
     void reset()
@@ -233,13 +239,16 @@ struct Sidofon : Module {
         sid.set_voice_mask(0xf);
         sid.enable_filter(true);
         sid.enable_external_filter(true);
-        sid.set_sampling_parameters(cpuClockHz, reSID::SAMPLE_RESAMPLE, sampleRate);
 
         // CPU clock steps between audio samples
         cpuClockSteps = (reSID::cycle_count)roundf(cpuClockHz / sampleRate);
+        // by performing these clock steps what is the real clock hz used
+        cpuClockRealHz = cpuClockSteps * sampleRate;
 #ifdef DEBUG_SID
-        printf("cpuClockSteps: %d\n", cpuClockSteps);
+        printf("cpuClockSteps: %d, cpuClockRealHz=%f\n", cpuClockSteps, cpuClockRealHz);
 #endif
+
+        sid.set_sampling_parameters(cpuClockRealHz, reSID::SAMPLE_RESAMPLE, sampleRate);
 
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
             voiceRegs[i].reset();
@@ -285,7 +294,17 @@ struct Sidofon : Module {
         float pitchCV = 12.f * inputs[PITCH_INPUT + voiceNo].getVoltage();
         float pitch = dsp::FREQ_C4 * std::pow(2.f, (pitchKnob + pitchCV) / 12.f);
         uint16_t pitchReg = freq2sidreg(pitch);
+#ifdef DEBUG_SID
+        bool changedPitch = regs.setFreq(pitchReg);
+        if(changedPitch) {
+            float pitchGot = sidreg2freq(pitchReg);
+            float error = abs(pitchGot - pitch);
+            printf("Pitch#%d: freq=%f -> reg=$%04x -> freq=%f, error=%f\n", voiceNo,
+                pitch, pitchReg, pitchGot, error);
+        }
+#else
         regs.setFreq(pitchReg);
+#endif
 
         // update pulse width
         float pwKnob = params[PULSE_WIDTH_PARAM + voiceNo].getValue();

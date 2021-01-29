@@ -40,7 +40,7 @@ struct VoiceRegs {
     void realize(reSID::SID &sid, int voice_no);
     void reset();
 
-    void setFreq(uint16_t freq);
+    bool setFreq(uint16_t freq);
     void setPulseWidth(uint16_t pw);
     void setWaveform(uint8_t waveform);
     void setGate(bool on);
