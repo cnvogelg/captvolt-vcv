@@ -112,7 +112,7 @@ struct Sidofon : Module {
         MOS6581, MOS8580, MOS8580_DIGI
     };
 
-    CPUType cpuType;
+    CPUType cpuType = PAL;
     static constexpr float cpuClockHzPAL  =  985248.0f;
     static constexpr float cpuClockHzNTSC = 1022727.0f;
     static constexpr float vsyncHzPAL = 50.0f;
@@ -120,11 +120,11 @@ struct Sidofon : Module {
     float cpuClockHz = cpuClockHzPAL;
     float vsyncHz = vsyncHzPAL;
     float vsyncOversample = 1;
-    float sampleRate;
+    float sampleRate = 0.0;
 
     reSID::SID sid;
     SIDType sidType = MOS8580;
-    reSID::cycle_count cpuClockSteps;
+    reSID::cycle_count cpuClockSteps = 0;
     VoiceRegs voiceRegs[VoiceRegs::NUM_VOICES];
     FilterRegs filterRegs;
 
@@ -148,7 +148,7 @@ struct Sidofon : Module {
         for(int i=0;i<3;i++) {
             configParam(PITCH_PARAM + i, -54.0, 54.0, 0.0, "Pitch", " Hz", std::pow(2.f, 1.f/12.f), dsp::FREQ_C4, 0.f);
             configParam(PULSE_WIDTH_PARAM + i, -1.0, 1.0, 0.0, "Pulse Width", " %", 0.f, 100.f);
-            configParam(WAVE_TRI_PARAM + i, 0.0f, 1.0f, 0.0f, "Triangle", "");
+            configParam(WAVE_TRI_PARAM + i, 0.0f, 1.0f, 1.0f, "Triangle", "");
             configParam(WAVE_SAW_PARAM + i, 0.0f, 1.0f, 0.0f, "Sawtooth", "");
             configParam(WAVE_PULSE_PARAM + i, 0.0f, 1.0f, 0.0f, "Pulse", "");
             configParam(WAVE_NOISE_PARAM + i, 0.0f, 1.0f, 0.0f, "Noise", "");
@@ -187,7 +187,6 @@ struct Sidofon : Module {
                 cpuClockHz = cpuClockHzNTSC;
                 vsyncHz = 60.0f;
             }
-            vsyncPeriod = sampleRate / vsyncHz;
             reset();
         }
     }
@@ -204,7 +203,6 @@ struct Sidofon : Module {
     {
         if(rate != sampleRate) {
             sampleRate = rate;
-            vsyncPeriod = rate / vsyncHz;
             reset();
         }
     }
@@ -216,21 +214,32 @@ struct Sidofon : Module {
 
     void reset()
     {
-        vsyncCounter = 0.0;
+        // not configured yet
+        if(sampleRate == 0.0) {
+            return;
+        }
 
+        vsyncCounter = 0.0;
+        vsyncPeriod = sampleRate / vsyncHz;
+
+#ifdef DEBUG_SID
+        printf("SID reset: sidType=%d cpuClockHz=%f sampleRate=%f\n", sidType, cpuClockHz, sampleRate);
+#endif
         sid.reset();
 
         // configure SID
         sid.set_chip_model(sidType == MOS6581 ? reSID::MOS6581 : reSID::MOS8580);
         // enable 3 voices and aux
-        sid.set_voice_mask(0x7);
-        sid.set_sampling_parameters(cpuClockHz, reSID::SAMPLE_FAST, sampleRate);
-
+        sid.set_voice_mask(0xf);
         sid.enable_filter(true);
         sid.enable_external_filter(true);
+        sid.set_sampling_parameters(cpuClockHz, reSID::SAMPLE_RESAMPLE, sampleRate);
 
         // CPU clock steps between audio samples
         cpuClockSteps = (reSID::cycle_count)roundf(cpuClockHz / sampleRate);
+#ifdef DEBUG_SID
+        printf("cpuClockSteps: %d\n", cpuClockSteps);
+#endif
 
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
             voiceRegs[i].reset();

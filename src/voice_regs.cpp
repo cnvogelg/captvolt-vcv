@@ -1,7 +1,5 @@
 #include "voice_regs.h"
 
-#define DEBUG_REGS
-
 void VoiceRegs::realize(reSID::SID &sid, int voice_no)
 {
     int offset = voice_no * NUM_REGS;
@@ -9,20 +7,20 @@ void VoiceRegs::realize(reSID::SID &sid, int voice_no)
     if(dirty == 0) {
         return;
     }
-#ifdef DEBUG_REGS
+#ifdef DEBUG_SID
     printf("Update #%d:", voice_no);
 #endif
     for(int i=0;i<NUM_REGS;i++) {
         if((dirty & mask) == mask) {
             sid.write(offset, regs[i]);
-#ifdef DEBUG_REGS
+#ifdef DEBUG_SID
             printf(" @%02x=%02x", offset, regs[i]);
 #endif
         }
         offset++;
         mask<<=1;
     }
-#ifdef DEBUG_REGS
+#ifdef DEBUG_SID
     printf("\n");
 #endif
     dirty = 0;
