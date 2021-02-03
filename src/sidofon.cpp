@@ -233,11 +233,14 @@ struct Sidofon : Module {
 #endif
         sid.reset();
 
+        bool is6581 = (sidType == MOS6581);
+
         // configure SID
-        sid.set_chip_model(sidType == MOS6581 ? reSID::MOS6581 : reSID::MOS8580);
+        sid.set_chip_model(is6581 ? reSID::MOS6581 : reSID::MOS8580);
         // enable 3 voices and aux
         sid.set_voice_mask(0xf);
         sid.enable_filter(true);
+        sid.adjust_filter_bias(is6581 ? 0.5 : 0.0);
         sid.enable_external_filter(true);
 
         // CPU clock steps between audio samples
@@ -450,7 +453,7 @@ struct Sidofon : Module {
         // feed in aux
         int16_t aux_value;
         if(inputs[AUX_INPUT].isConnected()) {
-            float val = inputs[AUX_INPUT].getVoltage() / 10.0f;
+            float val = inputs[AUX_INPUT].getVoltage() / 5.0f;
             val = clamp(val, -1.0f, 1.0f);
             aux_value = (int16_t)(val * 32767.0f);
         } else {
@@ -505,7 +508,7 @@ struct Sidofon : Module {
 
         // Audio out: retrieve SID audio sample and convert to voltage
         int16_t sample = sid.output();
-        float audio = sample * 10.0f / 32768.0f;
+        float audio = sample * 20.0f / 32768.0f;
         outputs[AUDIO_OUTPUT].setVoltage(audio);
 
         // Clock out
