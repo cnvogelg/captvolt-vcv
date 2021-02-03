@@ -542,6 +542,14 @@ struct Sidofon : Module {
 struct CPUTypeMenuItem : MenuItem {
     Sidofon *module;
     Sidofon::CPUType cpuType;
+
+    CPUTypeMenuItem(Sidofon *mod, const std::string &name, Sidofon::CPUType ct)
+    : module(mod), cpuType(ct)
+    {
+        text = name;
+        rightText = CHECKMARK(module->cpuType == ct);
+    }
+
     void onAction(const event::Action &e) override{
         module->setCPUType(cpuType);
     }
@@ -550,6 +558,14 @@ struct CPUTypeMenuItem : MenuItem {
 struct SIDTypeMenuItem : MenuItem {
     Sidofon *module;
     Sidofon::SIDType sidType;
+
+    SIDTypeMenuItem(Sidofon *mod, const std::string &name, Sidofon::SIDType st)
+    : module(mod), sidType(st)
+    {
+        text = name;
+        rightText = CHECKMARK(module->sidType == st);
+    }
+
     void onAction(const event::Action &e) override{
         module->setSIDType(sidType);
     }
@@ -558,6 +574,14 @@ struct SIDTypeMenuItem : MenuItem {
 struct VSyncOversampleMenuItem : MenuItem {
     Sidofon *module;
     float oversample;
+
+    VSyncOversampleMenuItem(Sidofon *mod, const std::string &name, float ov)
+    : module(mod), oversample(ov)
+    {
+        text = name;
+        rightText = CHECKMARK(module->vsyncOversample == ov);
+    }
+
     void onAction(const event::Action &e) override{
         module->vsyncOversample = oversample;
     }
@@ -698,88 +722,39 @@ struct SidofonWidget : ModuleWidget {
         resetItem->module = module;
         menu->addChild(resetItem);
 
+        // SID Model
         MenuLabel *sidLabel = new MenuLabel();
         sidLabel->text = "SID Model";
         menu->addChild(sidLabel);
 
-        SIDTypeMenuItem *sid1Item = new SIDTypeMenuItem();
-        sid1Item->text = "MOS 6581";
-        sid1Item->module = module;
-        sid1Item->sidType = Sidofon::MOS6581;
-        sid1Item->rightText = CHECKMARK(module->sidType == Sidofon::MOS6581);
-        menu->addChild(sid1Item);
+        menu->addChild(new SIDTypeMenuItem(module, 
+            "MOS 6581", Sidofon::MOS6581));
+        menu->addChild(new SIDTypeMenuItem(module, 
+            "MOS 8580", Sidofon::MOS8580));
+        menu->addChild(new SIDTypeMenuItem(module, 
+            "MOS 8580 (Digi Boost)", Sidofon::MOS8580_DIGI));
 
-        SIDTypeMenuItem *sid2Item = new SIDTypeMenuItem();
-        sid2Item->text = "MOS 8580";
-        sid2Item->module = module;
-        sid2Item->sidType = Sidofon::MOS8580;
-        sid2Item->rightText = CHECKMARK(module->sidType == Sidofon::MOS8580);
-        menu->addChild(sid2Item);
-
+        // CPU Clock
         MenuLabel *cpuLabel = new MenuLabel();
         cpuLabel->text = "CPU Clock";
         menu->addChild(cpuLabel);
 
-        CPUTypeMenuItem *palItem = new CPUTypeMenuItem();
-        palItem->text = "PAL (50Hz vsync)";
-        palItem->module = module;
-        palItem->cpuType = Sidofon::PAL;
-        palItem->rightText = CHECKMARK(module->cpuType == Sidofon::PAL);
-        menu->addChild(palItem);
+        menu->addChild(new CPUTypeMenuItem(module,
+            "PAL (50Hz vsync)", Sidofon::PAL));
+        menu->addChild(new CPUTypeMenuItem(module,
+            "NTSC (60Hz vsync)", Sidofon::NTSC));
 
-        CPUTypeMenuItem *ntscItem = new CPUTypeMenuItem();
-        ntscItem->text = "NTSC (60Hz vsync)";
-        ntscItem->module = module;
-        ntscItem->cpuType = Sidofon::NTSC;
-        ntscItem->rightText = CHECKMARK(module->cpuType == Sidofon::NTSC);
-        menu->addChild(ntscItem);
-
+        // VSync Oversample
         MenuLabel *vsoLabel = new MenuLabel();
         vsoLabel->text = "VSync Oversample";
         menu->addChild(vsoLabel);
 
-        VSyncOversampleMenuItem *vso1Item = new VSyncOversampleMenuItem();
-        vso1Item->text = "x1";
-        vso1Item->module = module;
-        vso1Item->oversample = 1;
-        vso1Item->rightText = CHECKMARK(module->vsyncOversample == vso1Item->oversample);
-        menu->addChild(vso1Item);
-
-        VSyncOversampleMenuItem *vso2Item = new VSyncOversampleMenuItem();
-        vso2Item->text = "x2";
-        vso2Item->module = module;
-        vso2Item->oversample = 2;
-        vso2Item->rightText = CHECKMARK(module->vsyncOversample == vso2Item->oversample);
-        menu->addChild(vso2Item);
-
-        VSyncOversampleMenuItem *vso4Item = new VSyncOversampleMenuItem();
-        vso4Item->text = "x4";
-        vso4Item->module = module;
-        vso4Item->oversample = 4;
-        vso4Item->rightText = CHECKMARK(module->vsyncOversample == vso4Item->oversample);
-        menu->addChild(vso4Item);
-
-        VSyncOversampleMenuItem *vso8Item = new VSyncOversampleMenuItem();
-        vso8Item->text = "x8";
-        vso8Item->module = module;
-        vso8Item->oversample = 8;
-        vso8Item->rightText = CHECKMARK(module->vsyncOversample == vso8Item->oversample);
-        menu->addChild(vso8Item);
-
-        VSyncOversampleMenuItem *vso16Item = new VSyncOversampleMenuItem();
-        vso16Item->text = "x16";
-        vso16Item->module = module;
-        vso16Item->oversample = 16;
-        vso16Item->rightText = CHECKMARK(module->vsyncOversample == vso16Item->oversample);
-        menu->addChild(vso16Item);
-
-        VSyncOversampleMenuItem *vso0Item = new VSyncOversampleMenuItem();
-        vso0Item->text = "No VSync";
-        vso0Item->module = module;
-        vso0Item->oversample = 0;
-        vso0Item->rightText = CHECKMARK(module->vsyncOversample == vso0Item->oversample);
-        menu->addChild(vso0Item);
-
+        menu->addChild(new VSyncOversampleMenuItem(module, "x1", 1.0f));
+        menu->addChild(new VSyncOversampleMenuItem(module, "x2", 2.0f));
+        menu->addChild(new VSyncOversampleMenuItem(module, "x4", 4.0f));
+        menu->addChild(new VSyncOversampleMenuItem(module, "x8", 8.0f));
+        menu->addChild(new VSyncOversampleMenuItem(module, "x16", 16.0f));
+        menu->addChild(new VSyncOversampleMenuItem(module, "No VSync", 0.0f));
     }
 };
 
