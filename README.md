@@ -6,12 +6,12 @@
 
 Add Commodore 64's famous SID Chip (6681 or 8580) as a module to your VCV Rack.
 
-Using Doug Lem's very accurate [ReSID][1] Emulation the module offers raw
+Using Dag Lem's very accurate [ReSID][1] Emulation the module offers raw
 access to all registers of the SID on bit level. Each parameter is mapped to
 corresponding CV inputs. Additionally, manual controls are available.
 
 We assume that you are familar with the SID's registers. If not the 
-[SID 6851 data sheet][2] is a must read.
+[SID 6581 data sheet][2] is a must read.
 
 Both SID types 6581 and 8580 can be emulated. Select the desired type in the
 modules menu.
