@@ -125,6 +125,7 @@ struct Sidofon : Module {
 
     reSID::SID sid;
     SIDType sidType = MOS8580;
+    reSID::sampling_method sampleMode = reSID::SAMPLE_RESAMPLE;
     reSID::cycle_count cpuClockSteps = 0;
     VoiceRegs voiceRegs[VoiceRegs::NUM_VOICES];
     FilterRegs filterRegs;
@@ -141,6 +142,7 @@ struct Sidofon : Module {
     static constexpr const char *JSON_CPU_TYPE_KEY = "CPUType";
     static constexpr const char *JSON_SID_TYPE_KEY = "SIDType";
     static constexpr const char *JSON_VSYNC_OVERSAMPLE_KEY = "VSyncOversample";
+    static constexpr const char *JSON_SAMPLE_MODE_KEY = "SampleMode";
 
     Sidofon() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -208,6 +210,14 @@ struct Sidofon : Module {
         }
     }
 
+    void setSampleMode(reSID::sampling_method sm)
+    {
+        if(sm != sampleMode) {
+            sampleMode = sm;
+            reset();
+        }
+    }
+
     inline uint16_t freq2sidreg(float freq)
     {
         return (uint16_t)roundf(freq * 16777216.0f / cpuClockRealHz);
@@ -251,7 +261,7 @@ struct Sidofon : Module {
         printf("cpuClockSteps: %d, cpuClockRealHz=%f\n", cpuClockSteps, cpuClockRealHz);
 #endif
 
-        sid.set_sampling_parameters(cpuClockRealHz, reSID::SAMPLE_RESAMPLE, sampleRate);
+        sid.set_sampling_parameters(cpuClockRealHz, sampleMode, sampleRate);
 
         for(int i=0;i<VoiceRegs::NUM_VOICES;i++) {
             voiceRegs[i].reset();
@@ -504,10 +514,13 @@ struct Sidofon : Module {
         updateLights(args.sampleTime);
 
         // emulate SID for some CPU clocks
-        sid.clock(cpuClockSteps);
+        int16_t sample;
+        reSID::cycle_count steps = cpuClockSteps;
+        while(steps) {
+            sid.clock(steps, &sample, 1);
+        }
 
         // Audio out: retrieve SID audio sample and convert to voltage
-        int16_t sample = sid.output();
         float audio = sample * 20.0f / 32768.0f;
         outputs[AUDIO_OUTPUT].setVoltage(audio);
 
@@ -521,6 +534,7 @@ struct Sidofon : Module {
         json_object_set_new(rootJ, JSON_CPU_TYPE_KEY, json_integer(cpuType));
         json_object_set_new(rootJ, JSON_SID_TYPE_KEY, json_integer(sidType));
         json_object_set_new(rootJ, JSON_VSYNC_OVERSAMPLE_KEY, json_integer(vsyncOversample));
+        json_object_set_new(rootJ, JSON_SAMPLE_MODE_KEY, json_integer(sampleMode));
         return rootJ;
     }
 
@@ -538,6 +552,11 @@ struct Sidofon : Module {
         json_t *vsoJ = json_object_get(rootJ, JSON_VSYNC_OVERSAMPLE_KEY);
         if (vsoJ) {
             vsyncOversample = json_integer_value(vsoJ);
+        }
+        json_t *smJ = json_object_get(rootJ, JSON_SAMPLE_MODE_KEY);
+        if (smJ) {
+            reSID::sampling_method sampleMode = (reSID::sampling_method)json_integer_value(smJ);
+            setSampleMode(sampleMode);
         }
     }
 };
@@ -587,6 +606,22 @@ struct VSyncOversampleMenuItem : MenuItem {
 
     void onAction(const event::Action &e) override{
         module->vsyncOversample = oversample;
+    }
+};
+
+struct SampleModeMenuItem : MenuItem {
+    Sidofon *module;
+    reSID::sampling_method sampleMode;
+
+    SampleModeMenuItem(Sidofon *mod, const std::string &name, reSID::sampling_method sm)
+    : module(mod), sampleMode(sm)
+    {
+        text = name;
+        rightText = CHECKMARK(module->sampleMode == sm);
+    }
+
+    void onAction(const event::Action &e) override{
+        module->setSampleMode(sampleMode);
     }
 };
 
@@ -758,6 +793,16 @@ struct SidofonWidget : ModuleWidget {
         menu->addChild(new VSyncOversampleMenuItem(module, "x8", 8.0f));
         menu->addChild(new VSyncOversampleMenuItem(module, "x16", 16.0f));
         menu->addChild(new VSyncOversampleMenuItem(module, "No VSync", 0.0f));
+
+        // Sample Mode
+        MenuLabel *smLabel = new MenuLabel();
+        smLabel->text = "Sample Mode";
+        menu->addChild(smLabel);
+
+        //menu->addChild(new SampleModeMenuItem(module, "Fast", reSID::SAMPLE_FAST));
+        menu->addChild(new SampleModeMenuItem(module, "Interpolate", reSID::SAMPLE_INTERPOLATE));
+        menu->addChild(new SampleModeMenuItem(module, "Resample", reSID::SAMPLE_RESAMPLE));
+        menu->addChild(new SampleModeMenuItem(module, "Resample Fastmem", reSID::SAMPLE_RESAMPLE_FASTMEM));        
     }
 };
 
