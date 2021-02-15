@@ -42,8 +42,8 @@ void FilterRegs::setCutOff(uint16_t freq)
     freq &= CUTOFF_MAX;
     uint8_t old_lo = regs[CUTOFF_LO];
     uint8_t old_hi = regs[CUTOFF_HI];
-    regs[CUTOFF_LO] = (uint8_t)(freq & 0xff);
-    regs[CUTOFF_HI] = (uint8_t)(freq >> 8);
+    regs[CUTOFF_LO] = (uint8_t)(freq & 7); // low bits: 0...2
+    regs[CUTOFF_HI] = (uint8_t)((freq >> 3) & 0xff); // high bits 3...10
     if(regs[CUTOFF_LO] != old_lo) {
         dirty |= (1<<CUTOFF_LO);
     }

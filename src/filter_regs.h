@@ -37,7 +37,7 @@ struct FilterRegs {
     void setVoice3Off(bool off);
     void setVolume(uint8_t volume);
 
-    uint16_t getCutOff() { return regs[CUTOFF_HI] << 8 | regs[CUTOFF_LO]; }
+    uint16_t getCutOff() { return regs[CUTOFF_HI] << 3 | regs[CUTOFF_LO]; }
     uint8_t  getResonance() { return regs[RES_FILT] >> 4; }
     bool     getFilterVoice(int voice_no) { 
         return (regs[RES_FILT] & (1 << voice_no)) == (1 << voice_no); }
