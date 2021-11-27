@@ -1,5 +1,4 @@
 #include <iomanip>
-#include "dsp/digital.hpp"
 
 #include "plugin.hpp"
 #include "sid.h"
@@ -291,7 +290,7 @@ struct Sidofon : Module {
         filterRegs.reset();
     }
 
-    bool getSwitchValue(int inputId, int paramId) 
+    bool getSwitchValue(int inputId, int paramId)
     {
         float val = params[paramId].getValue();
         if(inputs[inputId].isConnected()) {
@@ -416,7 +415,7 @@ struct Sidofon : Module {
         filterRegs.setFilterVoice(1, voice2);
         bool voice3 = getSwitchValue(FILTER_VOICE3_INPUT, FILTER_VOICE3_PARAM);
         filterRegs.setFilterVoice(2, voice3);
-        bool ext = getSwitchValue(FILTER_AUX_INPUT, FILTER_AUX_PARAM); 
+        bool ext = getSwitchValue(FILTER_AUX_INPUT, FILTER_AUX_PARAM);
         filterRegs.setFilterExt(ext);
 
         bool lp = getSwitchValue(FILTER_LO_PASS_INPUT, FILTER_LO_PASS_PARAM);
@@ -433,10 +432,10 @@ struct Sidofon : Module {
 
         uint16_t cutoff = getLoHiValue(FILTER_CUTOFF_INPUT, FILTER_CUTOFF_PARAM, FilterRegs::CUTOFF_MAX);
         filterRegs.setCutOff(cutoff);
-        
+
         uint8_t  res = getByteValue(FILTER_RESONANCE_INPUT, FILTER_RESONANCE_PARAM, FilterRegs::RESONANCE_MAX);
         filterRegs.setResonance(res);
-        
+
         uint8_t  vol = getByteValue(VOLUME_INPUT, VOLUME_PARAM, FilterRegs::VOLUME_MAX);
         filterRegs.setVolume(vol);
     }
@@ -481,7 +480,7 @@ struct Sidofon : Module {
         if(sampleRate != args.sampleRate) {
             setSampleRate(args.sampleRate);
         }
-    
+
         // feed in aux
         int16_t aux_value;
         if(inputs[AUX_INPUT].isConnected()) {
@@ -765,7 +764,7 @@ struct SidofonWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24 + offset, 80)), module, Sidofon::WAVE_SAW_INPUT + voiceNo));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36 + offset, 80)), module, Sidofon::WAVE_PULSE_INPUT + voiceNo));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48 + offset, 80)), module, Sidofon::WAVE_NOISE_INPUT + voiceNo));
-        
+
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12 + offset, 96)), module, Sidofon::GATE_INPUT + voiceNo));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24 + offset, 96)), module, Sidofon::SYNC_INPUT + voiceNo));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36 + offset, 96)), module, Sidofon::RING_MOD_INPUT + voiceNo));
@@ -792,11 +791,11 @@ struct SidofonWidget : ModuleWidget {
         sidLabel->text = "SID Model";
         menu->addChild(sidLabel);
 
-        menu->addChild(new SIDTypeMenuItem(module, 
+        menu->addChild(new SIDTypeMenuItem(module,
             "MOS 6581", Sidofon::MOS6581));
-        menu->addChild(new SIDTypeMenuItem(module, 
+        menu->addChild(new SIDTypeMenuItem(module,
             "MOS 8580", Sidofon::MOS8580));
-        menu->addChild(new SIDTypeMenuItem(module, 
+        menu->addChild(new SIDTypeMenuItem(module,
             "MOS 8580 (Digi Boost)", Sidofon::MOS8580_DIGI));
 
         // CPU Clock
@@ -829,7 +828,7 @@ struct SidofonWidget : ModuleWidget {
         menu->addChild(new SampleModeMenuItem(module, "Direct", Sidofon::SAMPLE_DIRECT));
         menu->addChild(new SampleModeMenuItem(module, "Interpolate", Sidofon::SAMPLE_INTERPOLATE));
         menu->addChild(new SampleModeMenuItem(module, "Resample", Sidofon::SAMPLE_RESAMPLE));
-        menu->addChild(new SampleModeMenuItem(module, "Resample Fastmem", Sidofon::SAMPLE_RESAMPLE_FASTMEM));        
+        menu->addChild(new SampleModeMenuItem(module, "Resample Fastmem", Sidofon::SAMPLE_RESAMPLE_FASTMEM));
     }
 };
 
