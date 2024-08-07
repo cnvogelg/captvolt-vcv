@@ -72,6 +72,8 @@ struct Sidofon : Module {
     enum OutputIds {
         AUDIO_OUTPUT,
         CLOCK_OUTPUT,
+        VOICE3_ENV,
+        VOICE3_OSC,
         NUM_OUTPUTS
     };
     enum LightIds {
@@ -546,6 +548,15 @@ struct Sidofon : Module {
             }
         }
 
+        // Update Voice3 Outputs: Oscillator and Envelope
+        uint8_t voice3_osc = sid.read(0x1b);
+        float voice3_osc_f = voice3_osc * 10.f / 255.f - 5.f; // bipolar
+        outputs[VOICE3_OSC].setVoltage(voice3_osc_f);
+
+        uint8_t voice3_env = sid.read(0x1c);
+        float voice3_env_f = voice3_env * 10.f / 255.f; // unipolar
+        outputs[VOICE3_ENV].setVoltage(voice3_env_f);
+
         // Audio out: retrieve SID audio sample and convert to voltage
         float audio = sample * 20.0f / 32768.0f;
         outputs[AUDIO_OUTPUT].setVoltage(audio);
@@ -718,6 +729,9 @@ struct SidofonWidget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(192, 112)), module, Sidofon::CLOCK_INPUT));
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(204, 112)), module, Sidofon::CLOCK_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(216, 112)), module, Sidofon::AUDIO_OUTPUT));
+        // voice3 out
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(36 + 2 * 56, 64)), module, Sidofon::VOICE3_OSC));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(48 + 2 * 56, 64)), module, Sidofon::VOICE3_ENV));
     }
 
     void addVoice(int voiceNo, int offset) {
@@ -758,7 +772,7 @@ struct SidofonWidget : ModuleWidget {
 
         // inputs
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12 + offset, 64)), module, Sidofon::PITCH_INPUT + voiceNo));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(36 + offset, 64)), module, Sidofon::PULSE_WIDTH_INPUT + voiceNo));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24 + offset, 64)), module, Sidofon::PULSE_WIDTH_INPUT + voiceNo));
 
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12 + offset, 80)), module, Sidofon::WAVE_TRI_INPUT + voiceNo));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24 + offset, 80)), module, Sidofon::WAVE_SAW_INPUT + voiceNo));

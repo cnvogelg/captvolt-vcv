@@ -301,6 +301,9 @@ void EnvelopeGenerator::clock(cycle_count delta_t)
 
     rate_step = rate_period;
   }
+
+  // CV: sample ENV3
+  env3 = envelope_counter;
 }
 
 /**

@@ -4,7 +4,7 @@
 
 ![module screenshot](./doc/sidofon.png)
 
-Add Commodore 64's famous SID Chip (6681 or 8580) as a module to your VCV Rack.
+Add Commodore 64's famous SID Chip (6581 or 8580) as a module to your VCV Rack.
 
 Using Dag Lem's very accurate [ReSID][1] Emulation the module offers raw
 access to all registers of the SID on bit level. Each parameter is mapped to
@@ -90,6 +90,14 @@ voice control register.
 
 The ADSR values are converted to the discrete (0-15 range) values in the
 SID registers. The full unipolar range 0-10V of a CV is mapped.
+
+#### Voice 3 Oscillator and Envelope Output
+
+Voice 3 of the SID offers a special feature: `Osc` outputs the current
+oscillator signal as a bipolar CV. `Env` outputs the envelope as a unipolar
+CV. Both outputs are actual 8 bit register reads of the chip and therefore
+quantized signals. By disabling voice 3 (see `3Off`) you could use voice 3
+as a modulation source for your patch.
 
 ### Filter Section
 
