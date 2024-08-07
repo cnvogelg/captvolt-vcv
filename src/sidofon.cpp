@@ -171,6 +171,21 @@ struct Sidofon : Module {
             configParam(DECAY_PARAM + i, 0.0f, 1.0f, 0.0f, "Decay");
             configParam(SUSTAIN_PARAM + i, 0.0f, 1.0f, 1.0f, "Sustain");
             configParam(RELEASE_PARAM + i, 0.0f, 1.0f, 0.0f, "Release");
+
+            configInput(PITCH_INPUT + i, "Oscillator Pitch");
+            configInput(PULSE_WIDTH_INPUT + i, "Pulse Width");
+            configInput(WAVE_TRI_INPUT + i, "Waveform: Triangle");
+            configInput(WAVE_SAW_INPUT + i, "Waveform: Sawtooth");
+            configInput(WAVE_PULSE_INPUT + i, "Waveform: Pulse");
+            configInput(WAVE_NOISE_INPUT + i, "Waveform: Noise");
+            configInput(GATE_INPUT + i, "Gate Control Bit");
+            configInput(SYNC_INPUT + i, "Sync Control Bit");
+            configInput(RING_MOD_INPUT + i, "Ring Mod Control Bit");
+            configInput(TEST_INPUT + i, "Test Control Bit");
+            configInput(ATTACK_INPUT + i, "Envelope: Attack");
+            configInput(DECAY_INPUT + i, "Envelope: Decay");
+            configInput(SUSTAIN_INPUT + i, "Envelope: Sustain");
+            configInput(RELEASE_INPUT + i, "Envelope: Release");
         }
 
         // filter
@@ -185,6 +200,28 @@ struct Sidofon : Module {
         configParam(FILTER_CUTOFF_PARAM, 0.0f, 1.0f, 0.5f, "Filter Cut Off Freq");
         configParam(FILTER_RESONANCE_PARAM, 0.0f, 1.0f, 0.0f, "Filter Resonance");
         configParam(VOLUME_PARAM, 0.0f, 1.0f, 1.0f, "Master Volume");
+
+        configInput(FILTER_VOICE1_INPUT, "Filter: Voice 1");
+        configInput(FILTER_VOICE2_INPUT, "Filter: Voice 2");
+        configInput(FILTER_VOICE3_INPUT, "Filter: Voice 3");
+        configInput(FILTER_AUX_INPUT, "Filter: Aux Signal");
+        configInput(FILTER_LO_PASS_INPUT, "Low Pass Filter");
+        configInput(FILTER_BAND_PASS_INPUT, "Band Pass Filter");
+        configInput(FILTER_HI_PASS_INPUT, "High Pass Filter");
+        configInput(VOICE3OFF_INPUT, "Disable Voice 3");
+        configInput(FILTER_CUTOFF_INPUT, "Filter Cut Off Freq");
+        configInput(FILTER_RESONANCE_INPUT, "Filter Resonance");
+        configInput(VOLUME_INPUT, "Main Volume");
+
+        // main
+        configInput(AUX_INPUT, "Aux Signal");
+        configInput(CLOCK_INPUT, "Ext. SID Register Update Clock");
+
+        // output
+        configOutput(AUDIO_OUTPUT, "SID Audio");
+        configOutput(CLOCK_OUTPUT, "SID Register Update Clock");
+        configOutput(VOICE3_ENV, "Voice 3 Envelope");
+        configOutput(VOICE3_OSC, "Voice 3 Oscillator");
     }
 
     void setCPUType(CPUType type)
